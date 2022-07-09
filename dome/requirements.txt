@@ -1,0 +1,6 @@
+opencv-python
+codenerix_lib
+pyPS4Controller
+vext
+vext.gi
+matplotlib

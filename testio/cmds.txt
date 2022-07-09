@@ -1,0 +1,5 @@
+# Compile only for MEGA 2560
+pio run -e megaatmega2560
+
+# Compile and upload to MEGA 2560
+pio run -e megaatmega2560 -t upload

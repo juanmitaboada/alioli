@@ -1,0 +1,13 @@
+    while ( true ) {
+        vTaskDelay(10);
+            if (Gyro_x == 0) Gyro_x += 1;
+            if (Gyro_y == 0) Gyro_y += 1;
+            if (Gyro_z == 0) Gyro_z += 1;
+            if (Acc_x == 0) Acc_x +=  1;
+            if (Acc_y == 0) Acc_y += 1;
+            if (Acc_z == 0) Acc_z += 1;
+       filterUpdate(
+		//	   		0.0, 0.0, 0.0,
+					 ((float)Gyro_x)/(10.0*RAD_FACTOR), (float)(Gyro_y)/(10.0*RAD_FACTOR), (float)(Gyro_z)/(10.0*RAD_FACTOR),
+                     (float)(Acc_x)/5000.0, (float)(Acc_y)/5000.0, (float)(Acc_z)/5000.0);
+            }

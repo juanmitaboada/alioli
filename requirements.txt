@@ -1,0 +1,7 @@
+codenerix_lib
+helper_zlib
+pyPS4Controller
+ipython
+matplotlib
+vext
+vext.gi

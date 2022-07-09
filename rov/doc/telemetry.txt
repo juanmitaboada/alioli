@@ -1,0 +1,7 @@
+// Telemetry with Mini OSD
+http://www.multicopterox.es/configuracion-de-minimosd-extra-y-micro-minimosd-extra-para-pixhawk/
+http://dronesdecarreras.com/tutorial-como-configurar-un-minimosd-paso-a-paso/
+
+// Camera
+https://circuitdigest.com/microcontroller-projects/how-to-use-ov7670-camera-module-with-arduino
+https://www.instructables.com/Arduino-RC-Car-with-FPV-Camera/

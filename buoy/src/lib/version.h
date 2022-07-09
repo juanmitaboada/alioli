@@ -1,0 +1,7 @@
+#ifndef VERSION_H
+#define VERSION_H
+
+#define BUILD_DATE "mar 29 mar 2022 10:06:23 CEST"
+#define BUILD_VERSION "20220329100623CEST"
+
+#endif

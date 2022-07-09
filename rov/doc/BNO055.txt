@@ -1,0 +1,12 @@
+TECNOIOT GY-BNO055 BNO055 9DOF 9-Axis Absolute Orientation Triaxial Geomagnetic Gyroscope
+Visita la Store de TECNOIOT
+ 3,0 de 5 estrellas    9 valoraciones 
+Precio:	30,58 € 
+Precio final del producto
+6€ de regalo al recargar tu cuenta con 60€: Más información.
+Servicios de asistencia gratuita incluida para productos de Amazon. 
+【BNO055】Bosch Sensortec BNO055 Intelligent 9-Axis Absolute Orientation Sensor is a System in Package (SiP), integrating a triaxial 14-bit accelerometer, a triaxial 16-bit gyroscope with a range of ±2000 degrees per second, a triaxial geomagnetic sensor and a 32-bit ARM Cortex M0+ microcontroller running Bosch Sensortec sensor fusion software, in a single package.
+【Compatible】The corresponding chip-sets are integrated into one single 28-pin LGA 3.8mm x 5.2mm x 1.1mm housing. For optimum system integration the BNO055 is equipped with digital bidirectional I2C and UART interfaces. The I2C interface can be programmed to run with the HID-I2C protocol turning the BNO055 into a plug-and-play sensor hub solution for devices running the Windows OS.
+【Design compact】The BNO055 can output the following sensor data: 1. Absolute Orientation (Euler Vector, 100Hz); 2. Absolute Orientation (Quaterion, 100Hz);3. Angular Velocity Vector (20Hz); 4.Acceleration Vector (100Hz); 5. Magnetic Field Strength Vector (100Hz)6. Linear Acceleration Vector (100Hz); 6. Gravity Vector (100Hz); 7. Temperature (1Hz) Ambient temperature in degrees celsius
+【Fast delivery】 Fast and high quality delivery of Spain buying in TECNOIOT
+

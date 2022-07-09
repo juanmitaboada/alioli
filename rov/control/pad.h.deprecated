@@ -1,0 +1,11 @@
+#ifndef PAD_H
+#define PAD_H
+
+struct TPadConfig {
+    unsigned short int horizontal_is_x = 0;
+    unsigned short int top_is_positive = 0;
+    long int nextevent;
+};
+typedef struct TPadConfig PadConfig;
+
+#endif

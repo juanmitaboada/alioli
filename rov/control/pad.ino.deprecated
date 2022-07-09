@@ -1,0 +1,126 @@
+#include "lib/shared.h"
+#include "lib/config.h"
+#include "lib/alioli.h"
+
+#include "monitor/monitor.h"
+#include "pad.h"
+
+/*
+    PAD analog values positions
+                     y=1000
+                        |
+             x=1000 - - - - - x=0
+                        |
+                       y=0
+*/
+
+PadConfig pad_config;
+
+void control_pad_recode(int *x, int *y, float *dir, float *acel) {
+    int ox=*x, oy=*y;
+
+    // Refilter (values will be between -5 and +5
+    ox = ( *x - 500 ) / 100;
+    oy = ( *y - 500 ) / 100;
+
+    // Set axis
+    if (pad_config.horizontal_is_x) {
+        if (pad_config.top_is_positive) {
+            *x = -ox;
+            *y = oy;
+        } else {
+            *x = ox;
+            *y = -oy;
+        }
+    } else {
+        if (pad_config.top_is_positive) {
+            *x = oy;
+            *y = ox;
+        } else {
+            *x = -oy;
+            *y = -ox;
+        }
+    }
+}
+
+
+// === SETUP === ==========================================================
+
+void pad_setup(long int now) {
+    int x=500, y=500;
+
+    // Setup
+    pinMode(PAD_PINOUT_SW_pin, INPUT);
+    digitalWrite(PAD_PINOUT_SW_pin, HIGH);
+
+    // Decide if to use Quick Start
+    if (QUICK_START) {
+        // Use default configuration
+        x = DEFAULT_CONTROL_PAD_X;
+        y = DEFAULT_CONTROL_PAD_Y;
+    } else {
+        // Request the user for configuration
+        while (x>250 && x<750 && y>250 && y<750) {
+            print_debug("CONTROL-SETUP", stdout, "yellow", COLOR_NORMAL, "Please, point your pad to UP position!");
+            x = analogRead(PAD_PINOUT_X_pin);
+            y = analogRead(PAD_PINOUT_Y_pin);
+            // Warn with lights
+            lights_warn(now);
+        }
+    }
+
+    // Inialize
+    pad_config.pad_nextevent = 0;
+
+    if (x<250) {
+        pad_config.horizontal_is_x = 0;
+        pad_config.top_is_positive = 0;
+    } else if (x>750) {
+        pad_config.horizontal_is_x = 0;
+        pad_config.top_is_positive = 1;
+    } else if (y<250) {
+        pad_config.horizontal_is_x = 1;
+        pad_config.top_is_positive = 0;
+    } else if (y>750) {
+        pad_config.horizontal_is_x = 1;
+        pad_config.top_is_positive = 1;
+    }
+}
+#endif
+
+// === LOOP === ===========================================================
+
+void control_loop(long int now) {
+    int x=0, y=0;
+    float dir=0.0, acel=0.0;
+#if DEBUG_CONTROL
+    int sw=0;
+#endif
+
+    // Check pad lookup
+    if (pad_config.pad_nextevent<now) {
+
+        // Update nextevent
+        pad_config.pad_nextevent = now+PAD_LOOKUP_MS;
+
+#if DEBUG_CONTROL
+        sw = !digitalRead(PAD_PINOUT_SW_pin);
+#endif
+        x = analogRead(PAD_PINOUT_X_pin);
+        y = analogRead(PAD_PINOUT_Y_pin);
+
+        // Recode position
+        control_pad_recode(&x, &y, &dir, &acel);
+
+#if DEBUG_CONTROL
+        print_debug("CONTROL-LOOP", stdout, "yellow", COLOR_NOTAIL, "PAD: (");
+        print_debug("CONTROL-LOOP", stdout, "white", COLOR_NOHEAD_NOTAIL, "%d", sw);
+        print_debug("CONTROL-LOOP", stdout, "yellow", COLOR_NOHEAD_NOTAIL, ":");
+        print_debug("CONTROL-LOOP", stdout, "white", COLOR_NOHEAD_NOTAIL, "%d", x);
+        print_debug("CONTROL-LOOP", stdout, "yellow", COLOR_NOHEAD_NOTAIL, ",");
+        print_debug("CONTROL-LOOP", stdout, "white", COLOR_NOHEAD_NOTAIL, "%d", y);
+        print_debug("CONTROL-LOOP", stdout, "yellow", COLOR_NOHEAD, ")");
+#endif
+    }
+
+}

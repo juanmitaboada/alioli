@@ -1,0 +1,9 @@
+build*/
+*.swp
+env
+__pycache__
+old
+doc
+mavlink
+modemsimul
+examples
