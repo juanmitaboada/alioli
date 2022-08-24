@@ -122,50 +122,118 @@ const char* get_color(unsigned char car) {
 }
 
 // Print string as a list of integers and hexadecimal
-void print_asint(const char *string, size_t string_size ) {
+void print_asint(const char *string, size_t string_size, FILE *output) {
     size_t i=0;
-    printf("\n");
+    char temp[ALIOLI_PRINT_AS_TEMP_LEN] = "";
+    if (output) {
+        fprintf(output, "\n");
+    } else {
+        Serial.println("");
+    }
     for (i=0; i<string_size; i++) {
         if (i>0) {
             if (!(i % PRINT_AS_LINE)) {
-                printf("\n");
+                if (output) {
+                    fprintf(output, "\n");
+                } else {
+                    Serial.println("");
+                }
             } else {
-                printf(" ");
+                if (output) {
+                    fprintf(output, " ");
+                } else {
+                    Serial.println("");
+                }
             }
         }
-        printf("%s%3d%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+        if (output) {
+            fprintf(output, "%s%3d%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+        } else {
+            sprintf(temp, "%s%3d%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+            Serial.print(temp);
+        }
     }
-    printf("\nSize: %u - Pointer: %p\n", string_size, string);
+    if (output) {
+        fprintf(output, "\nSize: %u - Pointer: %p\n", string_size, string);
+    } else {
+        Serial.println("");
+        sprintf(temp, "Size: %u - Pointer: %p", string_size, string);
+        Serial.print(temp);
+        Serial.println("");
+    }
 }
 
-void print_ashex(const char *string, size_t string_size ) {
+void print_ashex(const char *string, size_t string_size, FILE *output) {
     size_t i=0;
-    printf("\n");
+    char temp[ALIOLI_PRINT_AS_TEMP_LEN] = "";
+    if (output) {
+        fprintf(output, "\n");
+    } else {
+        Serial.println("");
+    }
     for (i=0; i<string_size; i++) {
         if (i>0) {
             if (!(i % PRINT_AS_LINE)) {
-                printf("\n");
+                if (output) {
+                    fprintf(output, "\n");
+                } else {
+                    Serial.println("");
+                }
             } else {
-                printf(" ");
+                if (output) {
+                    fprintf(output, " ");
+                } else {
+                    Serial.print(" ");
+                }
             }
         }
-        printf("%s%02X%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+        if (output) {
+            fprintf(output, "%s%02X%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+        } else {
+            sprintf(temp, "%s%02X%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+            Serial.print(temp);
+        }
     }
-    printf("\nSize: %u - Pointer: %p\n", string_size, string);
+    if (output) {
+        fprintf(output, "\nSize: %u - Pointer: %p\n", string_size, string);
+    } else {
+        Serial.println("");
+        sprintf(temp, "Size: %u - Pointer: %p", string_size, string);
+        Serial.print(temp);
+        Serial.println("");
+    }
 }
 
-void print_asbin(const char *string, size_t string_size ) {
+void print_asbin(const char *string, size_t string_size, FILE *output ) {
     size_t i=0;
-    printf("\n");
-    for (i=0; i<string_size; i++) {
-        printf("%s%c%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+    char temp[ALIOLI_PRINT_AS_TEMP_LEN] = "";
+    if (output) {
+        fprintf(output, "\n");
+    } else {
+        Serial.println("");
     }
-    printf("\nSize: %u - Pointer: %p\n", string_size, string);
+    for (i=0; i<string_size; i++) {
+        if (output) {
+            fprintf(output, "%s%c%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+        } else {
+            sprintf(temp, "%s%c%s", get_color(string[i]), (unsigned char) string[i], get_color(0));
+            Serial.print(temp);
+
+        }
+    }
+    if (output) {
+        fprintf(output, "\nSize: %u - Pointer: %p\n", string_size, string);
+    } else {
+        Serial.println("");
+        sprintf(temp, "Size: %u - Pointer: %p", string_size, string);
+        Serial.print(temp);
+        Serial.println("");
+    }
 }
 
 void print_debug(const char *mainname, FILE *output, unsigned short int color, unsigned short int modifier, const char *fmt, ...) {
     char header[26]="";
-    char tail[2], pcolor[8]="", result[COLOR_MAX_BUFFER]="", name[COLOR_MAX_BUFFER]="", nocolor=0;
+    char tail[3]="", pcolor[8]="", result[COLOR_MAX_BUFFER]="", name[COLOR_MAX_BUFFER]="", nocolor=0;
     va_list argptr;
     unsigned int wrotten = 0;
 #if RTC
@@ -683,8 +751,9 @@ int bistrcmp(const char *s1, size_t l1, const char *s2, size_t l2) {
     }
 }
 // Find first occurrence of s2[] in s1[] for length l1
-char* bstrstr(const char *s1, size_t l1, const char *s2, size_t l2) {
+char* bstrstr(const char *s1, size_t ul1, const char *s2, size_t ul2) {
     char *found=NULL, *pivot=NULL;
+    long int l1=(long int) ul1, l2=(long int) ul2;
 
     // Check string size
     if (s1 && l1 && (l1>l2)) {
@@ -722,8 +791,9 @@ char* bstrstr(const char *s1, size_t l1, const char *s2, size_t l2) {
     }
     return found;
 }
-char* bistrstr(const char *s1, size_t l1, const char *s2, size_t l2) {
+char* bistrstr(const char *s1, size_t ul1, const char *s2, size_t ul2) {
     char *found=NULL, *pivot=NULL;
+    long int l1=(long int) ul1, l2=(long int) ul2;
 
     // Check string size
     if (s1 && l1 && (l1>l2)) {

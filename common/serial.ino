@@ -67,8 +67,8 @@ unsigned short int serial_available(int serial) {
     return avail;
 }
 
-unsigned short int serial_read(int serial) {
-    unsigned short int incomingByte=-1;
+int serial_read(int serial) {
+    int incomingByte=-1;
     if (0) {
 #ifdef SERIAL1_SPEED
     } else if (serial==1) {
@@ -174,16 +174,40 @@ unsigned short int serial_send(int serial, const char *msg, size_t bytes) {
     return !error;
 }
 
-unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait) {
-    unsigned short int error = 0;
-    unsigned short int incomingByte = 0;
+unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer, unsigned short int newlines) {
+    unsigned short int error=0, newline_counted=0;
+    int incomingByte = 0;
     unsigned int start=0;
+    long int bauds=0, waitbuffer=0;
+
+    if (0) {
+#ifdef SERIAL1_SPEED
+    } else if (serial==1) {
+#ifdef SERIAL1_CTRLPIN
+        bauds = SERIAL1_SPEED;
+#endif
+#endif
+#ifdef SERIAL2_SPEED
+    } else if (serial==2) {
+#ifdef SERIAL2_CTRLPIN
+        bauds = SERIAL2_SPEED;
+#endif
+#endif
+#ifdef SERIAL3_SPEED
+    } else if (serial==3) {
+#ifdef SERIAL3_CTRLPIN
+        bauds = SERIAL3_SPEED;
+#endif
+#endif
+    } else {
+        print_debug(SERIAL_NAME, stderr, CRED, 0, "ERROR: serial_recv() has failed because serial port number %d is not declared", serial);
+        error = 1;
+    }
 
     // Give time to answer
     if (!serial_available(serial)) {
         start = millis();
         while (millis()-start<wait) {
-            delay(10);
             if (serial_available(serial)) {
                 break;
             } else {
@@ -192,44 +216,86 @@ unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t 
         }
     }
 
+    // If forced delay, just wait for transfer of data to happen
+    if (wait_transfer) {
+        start = millis();
+        while (millis()-start<wait_transfer) {
+            yield();
+        }
+    }
+
     // While data in the bus, process it
     while (serial_available(serial)) {
         incomingByte = serial_read(serial);
-        delay(10);
-        yield();
         if (incomingByte>=0) {
+
+            // Count new lines if requested and we passed the first 2 bytes
+            if (newlines && (*buf_size>=2) && ((char) incomingByte == '\n')) {
+                // We found '\n'
+                newline_counted++;
+            }
+
+            // Concat
             if (!strcat_realloc(buf, buf_size, buf_allocated, (char*) &incomingByte, 1, __FILE__, __LINE__)) {
                 error = 1;
+            }
+
+            // Decide if we should keep reading
+            if (newlines && (newlines==newline_counted)) {
+                // We already got the newlines we were expecting, stop reading!
+                break;
             }
         } else {
             error = 1;
         }
+
+        // Wait until another byte arrives
+        // (bauds/10=bytes/sec, bauds/10/1000 = bytes/msec, bytes/speed = ms to wait + 1)
+        waitbuffer = bauds/10.0;
+        if (waitbuffer>=1000) {
+            waitbuffer = waitbuffer / 1000;
+        } else {
+            waitbuffer = 1;
+        }
+        delay(1+waitbuffer);
+        yield();
     }
-    yield();
 
     return !error;
 
 }
 
-unsigned short int serial_cmd(int serial, const char *header, const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait) {
+unsigned short int serial_cmd(int serial, const char *header, const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer, unsigned short int newlines) {
     unsigned short int error=0;
+    char *check=NULL;
+    unsigned int check_size=0;
 
     // Reset buffer size
     (*buf_size) = 0;
+
+    // Flush buff
+    serial_flush(serial);
 
     // Say hello to MODEM
     if (serial_send(serial, cmd, strlen(cmd))) {
 
         // Receive data
-        if (serial_recv(serial, buf, buf_size, buf_allocated, wait)) {
-            if (expected && bistrcmp(expected, strlen(expected), *buf, min(strlen(expected), (unsigned int) *buf_size))) {
+        if (serial_recv(serial, buf, buf_size, buf_allocated, wait, wait_transfer, newlines)) {
+            if (((*buf_size)>2) && ((*buf)[0]=='\r') && ((*buf)[1]=='\n')) {
+                check = (*buf)+2;
+                check_size = (unsigned int) (*buf_size)-1;
+            } else {
+                check = *buf;
+                check_size = (unsigned int) (*buf_size);
+            }
+            if (expected && bistrcmp(expected, strlen(expected), check, min(strlen(expected), check_size))) {
                 print_debug(header, stderr, CRED, 0, "Unexpected answer for command '%s'", cmd);
 #if DEBUG_EXPECTED
-                print_asbin(*buf, *buf_size);
-                print_ashex(*buf, *buf_size);
+                print_asbin(check, check_size, stderr);
+                print_ashex(check, check_size, stderr);
                 print_debug(header, stderr, CRED, 0, "expected:");
-                print_asbin(expected, strlen(expected));
-                print_ashex(expected, strlen(expected));
+                print_asbin(expected, strlen(expected), stderr);
+                print_ashex(expected, strlen(expected), stderr);
 #endif
                 error = 1;
             }

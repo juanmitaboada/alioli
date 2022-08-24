@@ -6,6 +6,7 @@
 #define PRINT_AS_LINE 30
 #define COLOR_MAX_BUFFER 2048
 #define PRINT_DEBUG_OVERFLOW_STRING " [...]"
+#define ALIOLI_PRINT_AS_TEMP_LEN 50
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,9 +40,9 @@ unsigned short int strcat_prealloc(char **target, size_t *allocated, size_t toal
 
 
 // === DEBUG CONTROL ===
-void print_asint( const char *string, size_t string_size );
-void print_ashex( const char *string, size_t string_size );
-void print_asbin(const char *string, size_t string_size );
+void print_asint( const char *string, size_t string_size, FILE *output);
+void print_ashex( const char *string, size_t string_size, FILE *output);
+void print_asbin(const char *string, size_t string_size, FILE *output);
 void print_debug(const char *mainname, FILE *output, unsigned short int color, unsigned short int modifier, const char *fmt, ...);
 
 

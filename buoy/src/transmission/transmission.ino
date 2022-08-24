@@ -10,15 +10,98 @@
 TransmissionConfig transmission_config;
 
 #ifdef MODEM_SERIAL
-unsigned short int modem_cmd(const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait) {
-    return serial_cmd(MODEM_SERIAL, "TR-M", cmd, expected, buf, buf_size, buf_allocated, wait);
+unsigned short int modem_cmd(const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer) {
+    return serial_cmd(MODEM_SERIAL, "TR-M", cmd, expected, buf, buf_size, buf_allocated, wait, wait_transfer, 0);
+}
+
+unsigned short int modem_getmsg(char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer) {
+    unsigned short int error=0;
+
+    // Initialize
+    (*buf_size) = 0;
+
+
+    error = !serial_recv(MODEM_SERIAL, buf, buf_size, buf_allocated, wait, wait_transfer, 0);
+
+    return !error;
+}
+
+unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_allocated) {
+    char cmd[400]="", *pointer=NULL;
+    unsigned short int error=0;
+
+    // Send our IPADDR
+    sprintf(cmd, "AT+CHTTPACT=\"%s\",%d\r\n", MANAGER_HOST, MANAGER_PORT);
+    error = !modem_cmd(cmd, "+CHTTPACT: REQUEST", buf, buf_size, buf_allocated, 2000, 0);
+
+    if (!error) {
+        sprintf(cmd, "GET http://%s%s?name=%s&version=%s&build=%s&ip=%s&port=%d HTTP/1.1\r\nHost: %s\r\nUser-Agent: Alioli Buoy v%s\r\nAccept: text/html\r\nConnection: close\r\n\r\n", MANAGER_HOST, MANAGER_URI, SYSNAME, VERSION, BUILD_VERSION, transmission_config.ipaddr, EXTERNAL_PORT, MANAGER_HOST, VERSION);
+        // print_debug("TRm", stdout, CBLUE, 0, "> %s", cmd);
+        error = !modem_cmd(cmd, "OK", buf, buf_size, buf_allocated, 2000, 0);
+        if (!error) {
+
+            // Check if header already came up
+            if (!bistrstr(*buf, *buf_size, "HTTP/1.1 200 OK", 15)) {
+                // Wait for the server to answer
+                error = !modem_cmd(cmd, "+CHTTPACT:", buf, buf_size, buf_allocated, 2000, 0);
+            }
+
+            // Initialize
+            pointer = bistrstr(*buf, *buf_size, "HTTP/1.1 200 OK", 15);
+            if (pointer) {
+                pointer = bstrstr(pointer, *buf_size-(pointer-*buf), "\r\n\r\n", 4);
+                if (pointer) {
+                    // Advance pointer to BODY position
+                    pointer += 4;
+                    pointer = bistrstr(pointer, *buf_size-(pointer-*buf), "OK", 2);
+                    if (!pointer) {
+                        print_debug("TRsm", stderr, CRED, 0, "UNEXPECTED HTTP ANSWER: remote system didn't answer with OK! :-(");
+                        error = 1;
+                    }
+                } else {
+                    print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: body not found!");
+                    error = 1;
+                }
+            } else {
+                print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: header not found or not \"HTTP/1.1 200 OK\"!");
+                error = 1;
+            }
+
+            /*
+            if (!error) {
+                *buf_size = 0;
+                while (!*buf_size) {
+#if DEBUG_MODEM_SETUP
+                    print_debug("TRsm", stdout, CCYAN, 0, "    > Waiting for HTTP session to finish...");
+#endif
+                    serial_recv(MODEM_SERIAL, buf, buf_size, buf_allocated, 1000, 500, 0);
+                }
+                if (!bistrstr(*buf, *buf_size, "+CHTTPACT: 0", 12)) {
+                    print_debug("TRsm", stderr, CRED, 0, "Socket didn't finish tranmission");
+                    error = 1;
+                }
+            }*/
+
+            // Show buffer if some error happened
+            if (error) {
+                print_asbin(*buf, *buf_size, stderr);
+                print_ashex(*buf, *buf_size, stderr);
+            }
+        }
+
+#if VERIFY_REMOTE_SERVER_ANSWER==0
+        error = 0;
+#endif
+    }
+
+    // Return if some error happened
+    return error;
 }
 
 unsigned short int modem_setup() {
     char *buf=NULL, *cmd=NULL, *pointer=NULL;
     size_t buf_size=0, buf_allocated=0;
-    const char *msg=NULL;
-    unsigned short int error=0, pin_ready=0, i=0, j=0, stat=0, retry=0;
+    unsigned short int error=0, pin_ready=0, i=0, retry=0;
 
     // Prepare cmd
     cmd = (char*) malloc(sizeof(char)*400);
@@ -42,7 +125,36 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "+++");
 #endif
-            error = !modem_cmd("+++", NULL, &buf, &buf_size, &buf_allocated, 500);
+        // Make sure we are online
+        if (!modem_cmd("+++", NULL, &buf, &buf_size, &buf_allocated, 1000, 1000)) {
+            // Try a second time
+            modem_cmd("+++", NULL, &buf, &buf_size, &buf_allocated, 1000, 1000);
+        }
+    }
+
+    // Do a full RESET from the MODULE before starting
+    modem_cmd("AT+CRESET\r\n", "OK", &buf, &buf_size, &buf_allocated, 1000, 1000);
+    if (!bistrstr(buf, buf_size, "RDY", 3)) {
+
+        // Wait for new data
+        buf_size=0;
+        for (retry=10; retry>0; retry--) {
+#if DEBUG_MODEM_SETUP
+            print_debug("TRsm", stdout, CBLUE, 0, "Waiting for module to RESET %d", retry);
+#endif
+            if (serial_recv(MODEM_SERIAL, &buf, &buf_size, &buf_allocated, 10000, 1000, 0)) {
+                if (bistrstr(buf, buf_size, "RDY", 3)) {
+                    break;
+                }
+            } else {
+                retry = 0;
+                print_debug("TRsm", stderr, CRED, 0, "Error while reading Modem serial port");
+                break;
+            }
+        }
+        if (!retry) {
+            print_debug("TRsm", stderr, CRED, 0, "Error while reading Modem serial port");
+        }
     }
 
 #if MODEM_SIMULATED==0
@@ -51,7 +163,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CTRL+Z");
 #endif
-        error = !modem_cmd("", NULL, &buf, &buf_size, &buf_allocated, 500);
+        error = !modem_cmd("", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
     }
 #endif
 
@@ -60,8 +172,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "RESET");
 #endif
-        error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500);
-        delay(2000);
+        error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
     }
 
     // Remove ECHO
@@ -69,7 +180,9 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "ECHO OFF");
 #endif
-        error = !modem_cmd("ATE0\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000);
+        error = !modem_cmd("ATE0\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 100);
+        // Empty buffer
+        modem_getmsg(&buf, &buf_size, &buf_allocated, 0, 0);
     }
 
     // Check AT
@@ -77,13 +190,15 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK AT");
 #endif
-        error = !modem_cmd("AT\r\n", NULL, &buf, &buf_size, &buf_allocated, 500);
+        error = !modem_cmd("AT\r\n", "OK", &buf, &buf_size, &buf_allocated, 500, 0);
         if (!error) {
             if (!bistrstr(buf, buf_size, "OK", 2)) {
                 // No answer to PIN status
                 print_debug("TRsm", stderr, CRED, 0, "AT command has failed!");
-                print_asbin(buf, buf_size);
-                print_ashex(buf, buf_size);
+                if (buf_size) {
+                    print_asbin(buf, buf_size, stderr);
+                    print_ashex(buf, buf_size, stderr);
+                }
                 error = 1;
             }
         }
@@ -97,7 +212,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "Reset MODULE (10 sec)");
 #endif
-        error = !modem_cmd("AT+CFUN=6\r\n", "\r\nOK", &buf, &buf_size, &buf_allocated, 10000);
+        error = !modem_cmd("AT+CFUN=6\r\n", "OK", &buf, &buf_size, &buf_allocated, 10000, 0);
     }
 
     // Startup Module
@@ -105,7 +220,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "Enable MODULE (15 sec)");
 #endif
-        error = !modem_cmd("AT+CFUN=1\r\n", NULL, &buf, &buf_size, &buf_allocated, 15000);
+        error = !modem_cmd("AT+CFUN=1\r\n", "OK", &buf, &buf_size, &buf_allocated, 15000, 0);
     }
 
     // Reset modem
@@ -113,7 +228,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "RESET");
 #endif
-        error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500);
+        error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
         delay(2000);
     }
 
@@ -122,7 +237,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "ECHO OFF");
 #endif
-        error = !modem_cmd("ATE0\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000);
+        error = !modem_cmd("ATE0\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 100);
     }
 
     // Check AT
@@ -130,16 +245,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK AT");
 #endif
-        error = !modem_cmd("AT\r\n", NULL, &buf, &buf_size, &buf_allocated, 500);
-        if (!error) {
-            if (!bistrstr(buf, buf_size, "OK", 2)) {
-                // No answer to PIN status
-                print_debug("TRsm", stderr, CRED, 0, "AT command has failed!");
-                print_asbin(buf, buf_size);
-                print_ashex(buf, buf_size);
-                error = 1;
-            }
-        }
+        error = !modem_cmd("AT\r\n", "OK", &buf, &buf_size, &buf_allocated, 500, 0);
     }
 
     // Check PIN status
@@ -147,7 +253,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK PIN STATUS");
 #endif
-        error = !modem_cmd("AT+CPIN?\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000);
+        error = !modem_cmd("AT+CPIN?\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 0);
         if (!error) {
             sprintf(cmd, "+CPIN: READY");
             if (bistrstr(buf, buf_size, cmd, strlen(cmd))) {
@@ -160,13 +266,13 @@ unsigned short int modem_setup() {
                 sprintf(cmd, "+CPIN: SIM PIN");
                 if (!bistrstr(buf, buf_size, cmd, strlen(cmd))) {
                     // No answer to PIN status
-                    print_debug("TRsm", stderr, CRED, 0, "NOT WAITING FOR PIN");
-                    print_asbin(buf, buf_size);
-                    print_ashex(buf, buf_size);
+                    print_debug("TRsm", stderr, CRED, 0, "NO PING REQUESTED");
+                    print_asbin(buf, buf_size, stderr);
+                    print_ashex(buf, buf_size, stderr);
                     error = 1;
 #if DEBUG_MODEM_SETUP
                 } else {
-                    print_debug("TRsm", stdout, CCYAN, 0, "WAITING FOR PIN");
+                    print_debug("TRsm", stdout, CCYAN, 0, "PIN REQUESTED");
 #endif
                 }
             }
@@ -179,7 +285,7 @@ unsigned short int modem_setup() {
         print_debug("TRsm", stdout, CBLUE, 0, "SEND PIN");
 #endif
         sprintf(cmd, "AT+CPIN=%d\r\n", MODEM_PIN);
-        error = !modem_cmd(cmd, NULL, &buf, &buf_size, &buf_allocated, 5000);
+        error = !modem_cmd(cmd, NULL, &buf, &buf_size, &buf_allocated, 5000, 2000);
         if (!error) {
 
             sprintf(cmd, "+CPIN: READY\r\n\r\nSMS DONE\r\n\r\nPB DONE");
@@ -192,8 +298,8 @@ unsigned short int modem_setup() {
                 } else {
                     // Error while setting PIN
                     print_debug("TRsm", stderr, CRED, 0, "PIN KO");
-                    print_asbin(buf, buf_size);
-                    print_ashex(buf, buf_size);
+                    print_asbin(buf, buf_size, stderr);
+                    print_ashex(buf, buf_size, stderr);
                 }
                 error = 1;
 #if DEBUG_MODEM_SETUP
@@ -205,12 +311,20 @@ unsigned short int modem_setup() {
         }
     }
 
+    // Delete ALL SMS
+    if (!error) {
+#if DEBUG_MODEM_SETUP
+        print_debug("TRsm", stdout, CBLUE, 0, "AT+CMGD=1,4  (Delete ALL SMSs)");
+#endif
+        modem_cmd("AT+CMGD=1,4\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
+    }
+
     // Set CIPMODE
     if (!error) {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CIPMODE=1");
 #endif
-        modem_cmd("AT+CIPMODE=1\r\n", NULL, &buf, &buf_size, &buf_allocated, 500);
+        modem_cmd("AT+CIPMODE=1\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
     }
 
     // Start GPRS
@@ -220,46 +334,59 @@ unsigned short int modem_setup() {
 #endif
 
         // Go as usually
-        error = !modem_cmd("AT+NETOPEN\r\n", NULL, &buf, &buf_size, &buf_allocated, 500);
+        error = !modem_cmd("AT+NETOPEN\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
         if (!error) {
+            // Check if OK is in the answer
             if (bistrstr(buf, buf_size, "OK", 2)) {
-                // Wait for new data
-                buf_size=0;
-                for (retry=10; retry>0; retry--) {
-#if DEBUG_MODEM_SETUP
-                    print_debug("TRsm", stdout, CBLUE, 0, "Waiting for link %d", retry);
-#endif
-                    if (!serial_recv(MODEM_SERIAL, &buf, &buf_size, &buf_allocated, 1000)) {
-                        retry = 0;
-                        print_debug("TRsm", stderr, CRED, 0, "Error while reading serial port");
-                        break;
-                    } else if (buf_size) {
-                        // New data arrived
-                        break;
-                    }
-                }
 
-                // If we got out while some retries were left
-                if (retry) {
+                // Check if NETOPEN was also answered
+                sprintf(cmd, "+NETOPEN: 0");
+                if (!bistrstr(buf, buf_size, cmd, strlen(cmd))) {
 
-                    // Check whatever we got
-                    sprintf(cmd, "+NETOPEN: 0");
+                    sprintf(cmd, "+IP ERROR: Network is already opened");
                     if (!bistrstr(buf, buf_size, cmd, strlen(cmd))) {
-                        sprintf(cmd, "\r\n+IP ERROR: Network is already opened");
-                        if (!bistrstr(buf, buf_size, cmd, strlen(cmd))) {
-                            // Error while starting GPRS
-                            print_debug("TRsm", stderr, CRED, 0, "NETOPEN has failed!");
-                            print_asbin(buf, buf_size);
-                            print_ashex(buf, buf_size);
-                            error = 1;
+
+                        // Wait for new data
+                        buf_size=0;
+                        for (retry=10; retry>0; retry--) {
+#if DEBUG_MODEM_SETUP
+                            print_debug("TRsm", stdout, CBLUE, 0, "Waiting for link %d", retry);
+#endif
+                            if (!serial_recv(MODEM_SERIAL, &buf, &buf_size, &buf_allocated, 1000, 500, 0)) {
+                                retry = 0;
+                                print_debug("TRsm", stderr, CRED, 0, "Error while reading serial port");
+                                break;
+                            } else if (buf_size) {
+                                // New data arrived
+                                break;
+                            }
+                        }
+
+                        // If we got out while some retries were left
+                        if (retry) {
+
+                            // Check whatever we got
+                            sprintf(cmd, "+NETOPEN: 0");
+                            if (!bistrstr(buf, buf_size, cmd, strlen(cmd))) {
+                                sprintf(cmd, "\r\n+IP ERROR: Network is already opened");
+                                if (!bistrstr(buf, buf_size, cmd, strlen(cmd))) {
+                                    // Error while starting GPRS
+                                    print_debug("TRsm", stderr, CRED, 0, "NETOPEN has failed!");
+                                    print_asbin(buf, buf_size, stderr);
+                                    print_ashex(buf, buf_size, stderr);
+                                    error = 1;
+                                }
+                            }
+
                         }
                     }
                 }
+
             } else {
                 // Error while starting GPRS
                 print_debug("TRsm", stderr, CRED, 0, "NETOPEN got unexpeced answer");
-                print_asbin(buf, buf_size);
-                print_ashex(buf, buf_size);
+                print_asbin(buf, buf_size, stderr);
+                print_ashex(buf, buf_size, stderr);
                 error = 1;
             }
         }
@@ -273,7 +400,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "Get IPDDR");
 #endif
-        error = !modem_cmd("AT+IPADDR\r\n", NULL, &buf, &buf_size, &buf_allocated, 500);
+        error = !modem_cmd("AT+IPADDR\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
         if (!error) {
             sprintf(cmd, "\r\n+IPADDR: ");
             if (!bistrcmp(cmd, strlen(cmd), buf, min(strlen(cmd), (unsigned int) buf_size))) {
@@ -299,21 +426,21 @@ unsigned short int modem_setup() {
                     } else {
                         print_debug("TRsm", stderr, CYELLOW, 0, "Couldn't read IPADDR!");
                         transmission_config.ipaddr[0] = 0;
-                        print_asbin(buf, buf_size);
-                        print_ashex(buf, buf_size);
+                        print_asbin(buf, buf_size, stderr);
+                        print_ashex(buf, buf_size, stderr);
                         error = 1;
                     }
                 } else {
                     print_debug("TRsm", stderr, CYELLOW, 0, "IPADDR seems to be too long! (%d bytes is bigger than max expected 16 bytes)", buf_size - strlen(cmd));
-                    print_asbin(buf, buf_size);
-                    print_ashex(buf, buf_size);
+                    print_asbin(buf, buf_size, stderr);
+                    print_ashex(buf, buf_size, stderr);
                     transmission_config.ipaddr[0] = 0;
                     error = 1;
                 }
             } else {
                 print_debug("TRsm", stderr, CYELLOW, 0, "Didn't get IPADDR!");
-                print_asbin(buf, buf_size);
-                print_ashex(buf, buf_size);
+                print_asbin(buf, buf_size, stderr);
+                print_ashex(buf, buf_size, stderr);
                 error = 1;
             }
         }
@@ -323,67 +450,14 @@ unsigned short int modem_setup() {
     // Send our IPADDR
     if (!error) {
 #if DEBUG_MODEM_SETUP
-        print_debug("TRsm", stdout, CBLUE, 0, "Send our IPADDR");
+        print_debug("TRm", stdout, CBLUE, 0, "Send our IPADDR");
 #endif
-        sprintf(cmd, "AT+CHTTPACT=\"%s\",%d\r\n", MANAGER_HOST, MANAGER_PORT);
-        error = !modem_cmd(cmd, "\r\n+CHTTPACT: REQUEST", &buf, &buf_size, &buf_allocated, 2000);
-
+        error = modem_send_our_ip(&buf, &buf_size, &buf_allocated);
+#if DEBUG_MODEM_SETUP
         if (!error) {
-            sprintf(cmd, "GET http://%s%s?name=%s&version=%s&build=%s&ip=%s&port=%d HTTP/1.1\r\nHost: %s\r\nUser-Agent: Alioli Buoy v%s\r\nAccept: text/html\r\nConnection: close\r\n\r\n", MANAGER_HOST, MANAGER_URI, SYSNAME, VERSION, BUILD_VERSION, transmission_config.ipaddr, EXTERNAL_PORT, MANAGER_HOST, VERSION);
-            error = !modem_cmd(cmd, "\r\nOK", &buf, &buf_size, &buf_allocated, 2000);
-            if (!error) {
-
-                // Intialize
-                pointer = bistrstr(buf, buf_size, "HTTP/1.1 200 OK", 15);
-                if (pointer) {
-                    pointer = bstrstr(pointer, buf_size-(pointer-buf), "\r\n\r\n", 4);
-                    if (pointer) {
-                        // Advance pointer to BODY position
-                        pointer += 4;
-                        pointer = bistrstr(pointer, buf_size-(pointer-buf), "OK", 2);
-                        if (!pointer) {
-                            print_debug("TRsm", stderr, CRED, 0, "UNEXPECTED HTTP ANSWER: remote system didn't answer with OK! :-(");
-                            error = 1;
-#if DEBUG_MODEM_SETUP
-                        } else {
-                            print_debug("TRsm", stdout, CCYAN, 0, "Our IP Address has been registered SUCESSFULLY");
-#endif
-                        }
-                    } else {
-                        print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: body not found!");
-                        error = 1;
-                    }
-                } else {
-                    print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: header not found or not \"HTTP/1.1 200 OK\"!");
-                    error = 1;
-                }
-
-                /*
-                if (!error) {
-                    buf_size = 0;
-                    while (!buf_size) {
-#if DEBUG_MODEM_SETUP
-                        print_debug("TRsm", stdout, CCYAN, 0, "    > Waiting for HTTP session to finish...");
-#endif
-                        serial_recv(MODEM_SERIAL, &buf, &buf_size, &buf_allocated, 1000);
-                    }
-                    if (!bistrstr(buf, buf_size, "+CHTTPACT: 0", 12)) {
-                        print_debug("TRsm", stderr, CRED, 0, "Socket didn't finish tranmission");
-                        error = 1;
-                    }
-                }*/
-
-                // Show buffer if some error happened
-                if (error) {
-                    print_asbin(buf, buf_size);
-                    print_ashex(buf, buf_size);
-                }
-            }
-
-#if VERIFY_REMOTE_SERVER_ANSWER==0
-            error = 0;
-#endif
+            print_debug("TRsm", stdout, CCYAN, 0, "Our IP Address has been registered SUCESSFULLY");
         }
+#endif
     }
 
     // Open listening socket
@@ -394,10 +468,15 @@ unsigned short int modem_setup() {
 
         // Go as usually
         sprintf(cmd, "AT+SERVERSTART=%d,0\r\n", EXTERNAL_PORT);
-        if (modem_cmd(cmd, "\r\nOK", &buf, &buf_size, &buf_allocated, 500)) {
-            print_debug(NULL, stdout, CWHITE, COLOR_NOHEAD_NOTAIL, "MODEM=%s:%d ", transmission_config.ipaddr, EXTERNAL_PORT);
-            transmission_config.modem_ready = 1;
-            transmission_config.modem_errors = 0;
+        if (modem_cmd(cmd, "OK", &buf, &buf_size, &buf_allocated, 2000, 500)) {
+            // Verify that server is UP
+            sprintf(cmd, "+SERVERSTART: 0,%d", EXTERNAL_PORT);
+            if (modem_cmd("AT+SERVERSTART?\r\n", cmd, &buf, &buf_size, &buf_allocated, 500, 0)) {
+                // Server is UP
+                print_debug(NULL, stdout, CWHITE, COLOR_NOHEAD_NOTAIL, "MODEM=%s:%d ", transmission_config.ipaddr, EXTERNAL_PORT);
+                transmission_config.modem_ready = 1;
+                transmission_config.modem_errors = 0;
+            }
         } else {
             error = 1;
         }
@@ -412,43 +491,146 @@ unsigned short int modem_setup() {
     return !error;
 }
 
-unsigned short int modem_getmsg(char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait) {
-    unsigned short int error=0;
-
-    // Initialize
-    (*buf_size) = 0;
-
-
-    error = !serial_recv(MODEM_SERIAL, buf, buf_size, buf_allocated, wait);
-
-    return !error;
-}
-
 unsigned short int modem_gps(char **buf, size_t *buf_size, size_t *buf_allocated) {
+    int i=0;
     unsigned short int error=0;
+    char **tokens=NULL, *token=NULL, temp[3]={0, 0, 0};
+    unsigned int year=0;
+    unsigned short int month=0, day=0, hour=0, minute=0, second=0;
 
     // Initialize
     (*buf_size) = 0;
+
+    // Request GPS position
+    error = !modem_cmd("AT+CGPSINFO\r\n", "+CGPSINFO: ", buf, buf_size, buf_allocated, 500, 0);
+    if (!error) {
+#if DUMMY_GPS
+        print_debug("TRgps", stdout, CYELLOW, 0, "Using DUMMY GPS! (29.4 -13.51 | 29.4N 13.51W)");
+#if DEBUG_TRANSMISSION
+        // Show what we got
+        // print_asbin(*buf, *buf_size, stderr);
+        // print_ashex(*buf, *buf_size, stderr);
+#endif
+        // Set DUMMY GPS position
+        (*buf_size) = 0;
+        // Example: 29.4 -13.51 (29.5N 13.51W)
+        strcat_realloc(buf, buf_size, buf_allocated, "+CGPSINFO: 2940.000000,N,01351.000000,W,220822,171746.0,23.1,0.0,0.0", 68, __FILE__, __LINE__);
+#endif
+
+        // Convert positions to decimal degrees (N=+ S=- E=+ W=-) - [ len("+CGPSINFO: ")==11 ]
+        tokens = bstr_split((*buf)+11, (*buf_size)-11, ',', (char*) __FILE__, __LINE__);
+        if (tokens) {
+            for (i=0; *(tokens+i); i++) {
+                token = *(tokens+i);
+                if (i==0) {
+                    // Latitude
+                    if (*token) {
+                        buoy.gps.latitude = atof(token) / 100;
+                    } else {
+                        buoy.gps.latitude = 0.0;
+                    }
+                } else if (i==1) {
+                    // Latitude sign
+                    if ((*token) && (*token=='S')) {
+                        buoy.gps.latitude *= -1;
+                    }
+                } else if (i==2) {
+                    // Longitude
+                    if (*token) {
+                        buoy.gps.longitude = atof(token) / 100;
+                    } else {
+                        buoy.gps.longitude = 0.0;
+                    }
+                } else if (i==3) {
+                    // Longitude sign
+                    if ((*token) && (*token=='W')) {
+                        buoy.gps.longitude *= -1;
+                    }
+                } else if (i==4) {
+                    // UTC Date
+                    if (*token) {
+                        temp[0] = token[0];
+                        temp[1] = token[1];
+                        year = atoi(temp);
+                        temp[0] = token[2];
+                        temp[1] = token[3];
+                        month = atoi(temp);
+                        temp[0] = token[4];
+                        temp[1] = token[5];
+                        day = atoi(temp);
+                    } else {
+                        year = 0;
+                        month = 0;
+                        day = 0;
+                    }
+                } else if (i==5) {
+                    // UTC Time
+                    if (*token) {
+                        temp[0] = token[0];
+                        temp[1] = token[1];
+                        hour = atoi(temp);
+                        temp[0] = token[2];
+                        temp[1] = token[3];
+                        minute = atoi(temp);
+                        temp[0] = token[4];
+                        temp[1] = token[5];
+                        second = atoi(temp);
+                    } else {
+                        hour = 0;
+                        minute = 0;
+                        second = 0;
+                    }
+                } else if (i==6) {
+                    // Altitude
+                    if (*token) {
+                        buoy.gps.altitude = atof(token);
+                    } else {
+                        buoy.gps.altitude = 0.0;
+                    }
+                } else if (i==7) {
+                    // Speed
+                    if (*token) {
+                        buoy.gps.speed = atof(token);
+                    } else {
+                        buoy.gps.speed = 0.0;
+                    }
+                } else if (i==8) {
+                    // Course
+                    if (*token) {
+                        buoy.gps.course = atof(token);
+                    } else {
+                        buoy.gps.course = 0.0;
+                    }
+                }
+            }
+            // Free tokens
+            free(tokens);
+            // Convert date
+            if (year>0) {
+                buoy.gps.epoch = date2epoch(year, month, day, hour, minute, second);
+            } else {
+                buoy.gps.epoch = 0;
+            }
+        }
+    }
 
     return !error;
 }
 
 unsigned short int modem_sendmsg(char *answer, size_t answer_size) {
-    unsigned short int error=0;
-
     return serial_send(MODEM_SERIAL, answer, answer_size);
 }
 #endif
 
 #ifdef RS485_SERIAL
-unsigned short int rs485_getmsg(char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait) {
+unsigned short int rs485_getmsg(char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer) {
     unsigned short int error=0;
 
     // Initialize
     (*buf_size) = 0;
 
 
-    error = !serial_recv(RS485_SERIAL, buf, buf_size, buf_allocated, wait);
+    error = !serial_recv(RS485_SERIAL, buf, buf_size, buf_allocated, wait, wait_transfer, 0);
 
     return !error;
 }
@@ -457,7 +639,7 @@ unsigned short int rs485_sendmsg(char *buf, size_t buf_size) {
     return serial_send(RS485_SERIAL, buf, buf_size);
 }
 unsigned short int rs485_cmd(const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait) {
-    return serial_cmd(RS485_SERIAL, "TR-R", cmd, expected, buf, buf_size, buf_allocated, wait);
+    return serial_cmd(RS485_SERIAL, "TR-R", cmd, expected, buf, buf_size, buf_allocated, wait, 0, 0);
 }
 
 unsigned short int rs485_setup() {
@@ -473,7 +655,7 @@ unsigned short int rs485_setup() {
     transmission_config.rs485_errors = 0;
 
     // Connect link to ROV
-    sprintf(temp, "PING - %d %d\r\n", millis(), SERIAL2_SPEED);
+    sprintf(temp, "PING - %lu %d\r\n", millis(), SERIAL2_SPEED);
     // sprintf(temp, "%d - CONNECT\r\n", millis());
     if (rs485_cmd(temp, "PONG", &buf, &buf_size, &buf_allocated, 2000)) {
 #if DEBUG_TRANSMISSION
@@ -506,6 +688,8 @@ void transmission_setup(long int now) {
     // Set local config
     transmission_config.nextevent = 0;
     transmission_config.gps_nextevent = 0;
+    transmission_config.ourip_nextevent = 0;
+    transmission_config.webserver_nextevent = 0;
     transmission_config.modem_ready = 0;
     transmission_config.modem_errors = 0;
     transmission_config.modem_linked = 0;
@@ -518,7 +702,9 @@ void transmission_setup(long int now) {
 #else
     transmission_config.rs485_ready = 1;
 #endif
+
 #ifdef MODEM_SERIAL
+    delay(2000);
     modem_setup();
 #else
     transmission_config.modem_ready = 1;
@@ -531,14 +717,16 @@ void transmission_setup(long int now) {
 }
 
 void transmission_loop(long int now) {
-    int incomingByte = 0;
-    int idx=0;
-    char *buf=NULL, *answer=NULL, *pivot=NULL;
+    char *buf=NULL, *answer=NULL;
     unsigned int buf_size=0, buf_allocated=0, answer_size=0, answer_allocated=0;
-    unsigned short int modem_error=0, rs485_error=0, bypass_msg=0;
+    unsigned short int modem_error=0, rs485_error=0;
 
     // Check transmission lookup
     if (transmission_config.nextevent<now) {
+
+#if DEBUG_TRANSMISSION
+        print_debug("TRl", stdout, CGREEN, 0, "ALIVE (MODEM errors: %d, RS485 errors: %d)", transmission_config.modem_errors, transmission_config.rs485_errors);
+#endif
 
         // Set next event
         transmission_config.nextevent = now+TRANSMISSION_MS;
@@ -552,82 +740,160 @@ void transmission_loop(long int now) {
 
             // Get remote MSG if any (and leave client waiting)
             buf_size = 0;
-            modem_error = !modem_getmsg(&buf, &buf_size, &buf_allocated, TIMEOUT_MODEM_MS);
+            modem_error = !modem_getmsg(&buf, &buf_size, &buf_allocated, 0, TRANSFER_MODEM_WAIT_MS);
 
-            // Check if there is a message to process
-            if (buf_size) {
+            // If no error
+            if (!modem_error) {
 
-                // Message detected
+                // Check if there is a message to process
+                if (buf_size) {
+
+                    // Message detected
 #if DEBUG_TRANSMISSION_MSG
-                print_debug("TRl", stdout, CPURPLE, 0, "MSG:");
-                print_asbin(buf, buf_size);
-                print_ashex(buf, buf_size);
+                    print_debug("TRl", stdout, CPURPLE, 0, "MSG:");
+                    print_asbin(buf, buf_size, stderr);
+                    print_ashex(buf, buf_size, stderr);
 #endif
 
-                // CONNECT msg
-                if (
-                    (!bistrcmp(buf, min(buf_size, (unsigned int) 7), "CONNECT", 7))
-                    ||
-                    (!bistrcmp(buf, min(buf_size, (unsigned int) 9), "\r\nCONNECT", 9))
-                ) {
-                    strcat_realloc(&answer, &answer_size, &answer_allocated, "WELCOME\n", 8, __FILE__, __LINE__);
+                    // CONNECT msg
+                    if (
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 7), "+CLIENT", 7))
+                        ||
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 9), "\r\n+CLIENT", 9))
+                    ) {
+                        strcat_realloc(&answer, &answer_size, &answer_allocated, "WELCOME\n", 8, __FILE__, __LINE__);
 #if DEBUG_TRANSMISSION
-                    print_debug("TRl", stdout, CCYAN, 0, "LINK OPEN");
+                        print_debug("TRl", stdout, CCYAN, 0, "LINK OPEN");
 #endif
-                    buf_size = 0;
-                    transmission_config.modem_linked = 1;
-                    communication_reset();
+                        buf_size = 0;
+                        transmission_config.modem_linked = 1;
+                        communication_reset();
 
-                // CLOSED msg
-                } else if (
-                    (!bistrcmp(buf, min(buf_size, (unsigned int) 6), "CLOSED", 6))
-                    ||
-                    (!bistrcmp(buf, min(buf_size, (unsigned int) 8), "\r\nCLOSED", 8))
-                ) {
+                    // CLOSED msg
+                    } else if (
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 6), "CLOSED", 6))
+                        ||
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 8), "\r\nCLOSED", 8))
+                    ) {
 #if DEBUG_TRANSMISSION
-                    print_debug("TRl", stdout, CBLUE, 0, "LINK CLOSED");
+                        print_debug("TRl", stdout, CBLUE, 0, "LINK CLOSED");
 #endif
-                    buf_size = 0;
-                    transmission_config.modem_linked = 0;
-                    communication_reset();
+                        buf_size = 0;
+                        transmission_config.modem_linked = 0;
+                        communication_reset();
 
-                // HELLO msg
-                } else if (
-                    (!bistrcmp(buf, min(buf_size, (unsigned int) 5), "PING", 5))
-                    ||
-                    (!bistrcmp(buf, min(buf_size, (unsigned int) 6), "\nPING", 6))
-                    ||
-                    (!bistrcmp(buf, min(buf_size, (unsigned int) 7), "\r\nPING", 7))
-                ) {
+                    // HELLO msg
+                    } else if (
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 5), "PING", 5))
+                        ||
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 6), "\nPING", 6))
+                        ||
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 7), "\r\nPING", 7))
+                    ) {
 #if DEBUG_TRANSMISSION
-                    print_debug("TRl", stdout, CCYAN, 0, "LINK PING");
+                        print_debug("TRl", stdout, CCYAN, 0, "LINK PING");
 #endif
-                    buf_size = 0;
-                    strcat_realloc(&answer, &answer_size, &answer_allocated, "PONG\n", 5, __FILE__, __LINE__);
-                    transmission_config.modem_linked = 0;
-                    communication_reset();
+                        buf_size = 0;
+                        strcat_realloc(&answer, &answer_size, &answer_allocated, "PONG\n", 5, __FILE__, __LINE__);
+                        transmission_config.modem_linked = 0;
+                        communication_reset();
 
-                // MAVLINK msg
-                } else if (transmission_config.modem_linked) {
-                    // Process message locally if linked to external system
+                    // MAVLINK msg
+                    } else if (transmission_config.modem_linked) {
+                        // Process message locally if linked to external system
 #if DEBUG_TRANSMISSION_MSG
-                    print_debug("TRl", stdout, CCYAN, 0, "LINK MAVLINK");
+                        print_debug("TRl", stdout, CCYAN, 0, "LINK MAVLINK");
 #endif
-                    // remote_msg(&buf, &buf_size, &buf_allocated, &answer, &answer_size, &answer_allocated);
-                } else {
-                    // Check connection to the GSM module
-                    modem_error = !modem_cmd("AT\r\n", NULL, &buf, &buf_size, &buf_allocated, 500);
-                    if (!modem_error) {
-                        if (!bistrstr(buf, buf_size, "OK", 2)) {
-                            // No answer to PIN status
-                            print_debug("TRl", stderr, CRED, 0, "AT command has failed!");
-                            print_asbin(buf, buf_size);
-                            print_ashex(buf, buf_size);
-                            modem_error = 1;
+                        remote_msg(&buf, &buf_size, &buf_allocated, &answer, &answer_size, &answer_allocated);
+                    } else {
+                        // Check connection to the GSM module
+                        modem_error = !modem_cmd("AT\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 100);
+                        if (!modem_error) {
+                            if (!bistrstr(buf, buf_size, "OK", 2)) {
+                                // No answer to Modem status
+                                print_debug("TRl", stderr, CRED, 0, "AT command has failed!");
+                                print_asbin(buf, buf_size, stderr);
+                                print_ashex(buf, buf_size, stderr);
+                                modem_error = 1;
+                            }
                         }
                     }
-                }
 
+                // No data in the BUS, chec if there is work to do
+                } else if (
+                           (transmission_config.gps_nextevent<now)
+                        || (transmission_config.webserver_nextevent<now)
+                        || (transmission_config.ourip_nextevent<now)
+                    ) {
+
+                    // Get back to AT mode
+                    if (transmission_config.modem_linked) {
+#if DEBUG_TRANSMISSION
+                        print_debug("TRl", stdout, CCYAN, 0, "Go to AT MODE");
+#endif
+                        modem_error = !modem_cmd("+++", "OK", &buf, &buf_size, &buf_allocated, 3000, 0);
+                    }
+
+                    // Check if no error happened (execute one command at a time)
+                    if (!modem_error) {
+
+                        // === SEND OUR IP ADDRESS ===
+                        if (transmission_config.ourip_nextevent<now) {
+#if DEBUG_TRANSMISSION
+                            print_debug("TRl", stdout, CCYAN, 0, "Send our IP ADDRESS");
+#endif
+                            // Set next event
+                            transmission_config.ourip_nextevent = now+TRANSMISSION_OURIP_MS;
+
+                            // Send our IP
+                            modem_error = modem_send_our_ip(&buf, &buf_size, &buf_allocated);
+
+#if DEBUG_MODEM_SETUP
+                            if (!modem_error) {
+                                print_debug("TRl", stdout, CCYAN, 0, "Our IP Address has been registered SUCESSFULLY");
+                            }
+#endif
+                        // === GET WEBSERVER STATUS ===
+                        } else if (transmission_config.webserver_nextevent<now) {
+
+#if DEBUG_TRANSMISSION
+                            print_debug("TRl", stdout, CCYAN, 0, "CHECK WEBSERVER STATUS");
+#endif
+
+                            // Set next event
+                            transmission_config.webserver_nextevent = now+TRANSMISSION_WEBSERVER_MS;
+
+                            // Check connection to the GSM module
+                            modem_error = !modem_cmd("AT+SERVERSTART?\r\n", "+SERVERSTART: 0,", &buf, &buf_size, &buf_allocated, 500, 0);
+                            if (modem_error && (!bistrstr(buf, buf_size, "+CIPEVENT: NETWORK CLOSED UNEXPECTEDLY", 38))) {
+                                modem_cmd("AT+NETCLOSE\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
+                            }
+
+                        // === GET GPS POSITION ===
+                        } else if (transmission_config.gps_nextevent<now) {
+
+#if DEBUG_TRANSMISSION
+                            print_debug("TRl", stdout, CCYAN, 0, "REQUEST GPS POSITION");
+#endif
+
+                            // Set next event
+                            transmission_config.gps_nextevent = now+TRANSMISSION_GPS_MS;
+
+                            // Get GPS position and timing
+                            buf_size = 0;
+                            modem_error = !modem_gps(&buf, &buf_size, &buf_allocated);
+                        }
+                    }
+
+                    // Go back to DATA mode
+                    if (!modem_error && transmission_config.modem_linked) {
+#if DEBUG_TRANSMISSION
+                        print_debug("TRl", stdout, CCYAN, 0, "Go back to DATA MODE");
+#endif
+                        serial_cmd(MODEM_SERIAL, "TRl", "ATO\r\n", "CONNECT", &buf, &buf_size, &buf_allocated, 1000, 0, 1);
+                    }
+
+                }
             }
 
 #endif
@@ -644,7 +910,7 @@ void transmission_loop(long int now) {
 
                     // Get answer
                     buf_size = 0;
-                    if (rs485_getmsg(&buf, &buf_size, &buf_allocated, TIMEOUT_RS485_MS)) {
+                    if (rs485_getmsg(&buf, &buf_size, &buf_allocated, TIMEOUT_RS485_MS, TRANSFER_RS485_WAIT_MS)) {
 
                         // Check if there is a message to process
                         if (buf_size) {
@@ -654,8 +920,8 @@ void transmission_loop(long int now) {
 
                             // RS485 data found
                             print_debug("TRl", stdout, CPURPLE, 0, "RS485:");
-                            print_asbin(answer, answer_size);
-                            print_ashex(answer, answer_size);
+                            print_asbin(answer, answer_size, stderr);
+                            print_ashex(answer, answer_size, stderr);
 
                         }
                     } else {
@@ -715,13 +981,13 @@ void transmission_loop(long int now) {
 
             } else {
                 // There was an error, count one error more
-                transmission_config.modem_errors++;
+                transmission_config.rs485_errors++;
             }
 #endif
 
 #if DEBUG_TRANSMISSION
-//        print_debug("TR", stdout, CPURPLE, 0, "Actual MODEM errors: %d", transmission_config.modem_errors);
-//        print_debug("TR", stdout, CPURPLE, 0, "Actual RS485 errors: %d", transmission_config.rs485_errors);
+            // print_debug("TR", stdout, CPURPLE, 0, "Actual MODEM errors: %d", transmission_config.modem_errors);
+            // print_debug("TR", stdout, CPURPLE, 0, "Actual RS485 errors: %d", transmission_config.rs485_errors);
 #endif
 
 #ifdef MODEM_SERIAL
@@ -757,37 +1023,12 @@ void transmission_loop(long int now) {
 
     }
 
-    /*
-    // === GET GPS POSITION ===
-    if ((transmission_config.modem_ready) && (transmission_config.gps_nextevent<now)) {
-
-        // Set next event
-        transmission_config.gps_nextevent = now+TRANSMISSION_GPS_MS;
-
-        // Get GPS position and timing
-        buf_size = 0;
-        modem_error = !modem_gps(&buf, &buf_size, &buf_allocated);
-
-        // Check if there is a message to process
-        if (buf_size) {
-
-            // GPS data found
-            print_debug("TRl", stdout, CPURPLE, 0, "GPS:");
-            print_asbin(buf, buf_size);
-            print_ashex(buf, buf_size);
-
-        }
-
-    }
-   */
-
     // Free memory
     if (buf) {
         free(buf);
     }
 
     // Loop control
-    yield();
     delay(10);
 
 }

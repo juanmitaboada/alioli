@@ -23,14 +23,13 @@ unsigned short int mavlink_msgcat(char **answer, unsigned int *answer_size, unsi
 unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *buf_allocated, char **answer, unsigned int *answer_size, unsigned int *answer_allocated) {
     mavlink_status_t status;
     mavlink_message_t msg;
-    int chan = MAVLINK_COMM_0, len=0;
-    unsigned short int gotmsg=0, incomingByte=0, bypass=0;
-    char temp[MAVLINK_MAX_PAYLOAD_LEN]={0};
+    int chan = MAVLINK_COMM_0; // , len=0;
+    unsigned short int gotmsg=0, bypass=0;
     unsigned int buf_idx=0;
 
     // Put all together
     strcat_realloc(&communication_config.mavlink_buf, &communication_config.mavlink_buf_size, &communication_config.mavlink_buf_allocated, *buf, *buf_size, __FILE__, __LINE__);
-    // print_ashex(communication_config.mavlink_buf, communication_config.mavlink_buf_size);
+    // print_ashex(communication_config.mavlink_buf, communication_config.mavlink_buf_size, stderr);
 
     // While data in the buffer and not MAVLINK message detected, keep reading
     yield();
@@ -49,8 +48,8 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                     // bypass=1;
                     {
                         // save the sysid and compid of the received heartbeat from the ARDUPILOT for use in sending new messages
-                        uint8_t received_sysid = msg.sysid;
-                        uint8_t received_compid = msg.compid;
+                        // uint8_t received_sysid = msg.sysid;
+                        // uint8_t received_compid = msg.compid;
                         mavlink_heartbeat_t packet;
                         mavlink_msg_heartbeat_decode(&msg, &packet);
 
@@ -65,8 +64,9 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         // mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
 
                         // GPS position
-                        mavlink_msg_global_position_int_pack(mavlink_system.sysid, mavlink_system.compid, &msg, millis(), 29.4*pow(10,7), -13.51*pow(10, 7), 15, 15, 0, 0, 0, 45);
+                        mavlink_msg_global_position_int_pack(mavlink_system.sysid, mavlink_system.compid, &msg, millis(), buoy.gps.latitude*pow(10,7), buoy.gps.longitude*pow(10, 7), buoy.gps.altitude, buoy.gps.altitude, 0, 0, 0, 45);
                         mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
+                        print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "GPS: %f - %f - %f", buoy.gps.latitude, buoy.gps.longitude, buoy.gps.altitude);
 
                         // Attitude
                         mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &msg, millis(), 45.0, 45.0, 45.0, 0.0, 0.0, 0.0);
@@ -105,12 +105,12 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
 
                 case MAVLINK_MSG_ID_PARAM_REQUEST_LIST:
                     {
-                        uint8_t received_sysid = msg.sysid;
-                        uint8_t received_compid = msg.compid;
+                        // uint8_t received_sysid = msg.sysid;
+                        // uint8_t received_compid = msg.compid;
                         mavlink_param_request_list_t request;
                         mavlink_msg_param_request_list_decode(&msg, &request);
                         mavlink_param_union_t paramUnion;
-                        const char *param_id="heading";
+                        // const char *param_id="heading";
 
                         paramUnion.param_float = 45.0;
                         paramUnion.type = MAV_PARAM_TYPE_REAL32;
@@ -167,7 +167,7 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
     mavlink_status_t status;
     mavlink_message_t msg;
     int chan = MAVLINK_COMM_0, len=0;
-    unsigned short int gotmsg=0, incomingByte=0;
+    unsigned short int gotmsg=0;
     char heartbeat[100]={0};
     unsigned int buf_idx=0;
 

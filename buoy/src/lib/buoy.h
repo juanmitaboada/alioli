@@ -1,8 +1,18 @@
 #ifndef BUOY_H
 #define BUOY_H
 
-// === ROV POSITION ===
-struct TRovPosition {
+// === BUOY ACELEROMETER ===
+struct TBuoyGPS {
+    float latitude;
+    float longitude;
+    float altitude;
+    float speed;
+    float course;
+    unsigned long int epoch;
+};
+typedef struct TBuoyGPS BuoyGPS;
+
+struct TBuoyAcel {
     // int AcX;
     // int AcY;
     // int AcZ;
@@ -14,7 +24,7 @@ struct TRovPosition {
     float angy;
     float angz;
 };
-typedef struct TRovPosition RovPosition;
+typedef struct TBuoyAcel BuoyAcel;
 
 struct TUserRequest {
     float x;          // X target
@@ -50,7 +60,8 @@ struct TEnvironment {
 typedef struct TEnvironment Environment;
 
 struct TBuoy {
-    RovPosition pos;
+    BuoyGPS gps;
+    BuoyAcel acel;
     Environment environment;
     UserRequest user;
 };

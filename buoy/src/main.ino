@@ -24,10 +24,19 @@
 #include "transmission/communication.ino"
 
 #ifdef ARDUINO_RASPBERRY_PI_PICO
-UART Serial2(8, 9, 0, 0);
+UART Serial2(SERIAL2_TX_PIN, SERIAL2_RX_PIN, 0, 0);
+// MbedI2C Wire(BUS_I2C_SDA, BUS_I2C_SCL);
+// MbedI2C(BUS_I2C_SDA, BUS_I2C_SCL);
+// MbedI2C Wire1(BUS_I2C_SDA, BUS_I2C_SCL);
+#endif
+
+#ifndef LED_BUILTIN
+#define LED_BUILTIN 13
 #endif
 
 int freeram=0;
+int led_builtin_ts=0;
+unsigned short int led_builtin_status=0;
 
 void setup() {
 #if RTC
@@ -41,6 +50,10 @@ void setup() {
     // Header
     Serial.begin(115200);
     Serial.println(F("Starting bootloader... (if stuck here is because the CLOCK is not available!)"));
+
+    // Startup Internal LED
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
 
 #ifdef ARDUINO_ARCH_AVR
     // Prepare buffers
@@ -60,6 +73,20 @@ void setup() {
     while (!rtc.begin()) {
         print_debug("SETUP", stdout, CRED, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
         delay(1000);
+        digitalWrite(LED_BUILTIN, LOW);
+        delay(100);
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(100);
+        digitalWrite(LED_BUILTIN, LOW);
+        delay(100);
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(100);
+        if (led_builtin_status) {
+            digitalWrite(LED_BUILTIN, LOW);
+        } else {
+            digitalWrite(LED_BUILTIN, HIGH);
+        }
+        led_builtin_status = !led_builtin_status;
     }
 
     if (rtc.lostPower()) {
@@ -78,7 +105,6 @@ void setup() {
     now = millis();
 
     // Show header
-    Serial.println("Line: 78");
     print_debug("SETUP", stdout, CBLUE, 0, "Bootloader ready (Now: %ld)", now);
     print_debug("SETUP", stdout, CCYAN, 0, "    Alioli library v%s", alioli_version());
     transmission_setup(now);
@@ -88,6 +114,19 @@ void setup() {
 #ifdef ESP32
     freeram=ESP.getFreeHeap();
 #endif
+
+    // Setup main object
+    // =================
+    // GPS
+    buoy.gps.latitude = 0.0;
+    buoy.gps.longitude = 0.0;
+    buoy.gps.altitude = 0.0;
+    buoy.gps.speed = 0.0;
+    buoy.gps.course = 0.0;
+    buoy.gps.epoch = 0;
+    digitalWrite(LED_BUILTIN, LOW);
+    led_builtin_ts = millis();
+    led_builtin_status = 0;
 }
 
 void loop() {
@@ -97,6 +136,19 @@ void loop() {
 #if DEBUG_MAIN
     print_debug("MAIN", stdout, CCYAN, 0, "START");
 #endif
+
+    // Show Internal LED flashing
+    if ((millis()-led_builtin_ts)<1000) {
+        // Update timestamp
+        led_builtin_ts = millis();
+        // Switch led
+        if (led_builtin_status) {
+            digitalWrite(LED_BUILTIN, LOW);
+        } else {
+            digitalWrite(LED_BUILTIN, HIGH);
+        }
+        led_builtin_status = !led_builtin_status;
+    }
 
     // === TRANSMISSION ===
 #if DEBUG_MAIN
