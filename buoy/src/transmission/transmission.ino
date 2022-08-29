@@ -35,7 +35,7 @@ unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_a
     error = !modem_cmd(cmd, "+CHTTPACT: REQUEST", buf, buf_size, buf_allocated, 2000, 0);
 
     if (!error) {
-        sprintf(cmd, "GET http://%s%s?name=%s&version=%s&build=%s&ip=%s&port=%d HTTP/1.1\r\nHost: %s\r\nUser-Agent: Alioli Buoy v%s\r\nAccept: text/html\r\nConnection: close\r\n\r\n", MANAGER_HOST, MANAGER_URI, SYSNAME, VERSION, BUILD_VERSION, transmission_config.ipaddr, EXTERNAL_PORT, MANAGER_HOST, VERSION);
+        sprintf(cmd, "GET http://%s%s?name=%s&version=%s&build=%s&ip=%s&port=%d HTTP/1.1\r\nHost: %s\r\nUser-Agent: Alioli Buoy v%s\r\nAlioli-Key: %s\r\nAccept: text/html\r\nConnection: close\r\n\r\n", MANAGER_HOST, MANAGER_URI, SYSNAME, VERSION, BUILD_VERSION, transmission_config.ipaddr, EXTERNAL_PORT, MANAGER_HOST, VERSION, HTTP_KEY);
         // print_debug("TRm", stdout, CBLUE, 0, "> %s", cmd);
         error = !modem_cmd(cmd, "OK", buf, buf_size, buf_allocated, 2000, 0);
         if (!error) {
@@ -647,16 +647,16 @@ unsigned short int rs485_setup() {
     char *buf=NULL;
     size_t buf_size=0, buf_allocated=0;
 
-    char temp[40]="";
+    // char temp[40]="";
 
     // Initialize
     transmission_config.rs485_ready = 0;
     transmission_config.rs485_errors = 0;
 
     // Connect link to ROV
-    sprintf(temp, "PING - %lu %d\r\n", millis(), SERIAL2_SPEED);
+    // sprintf(temp, "PING - %lu %d\r\n", millis(), SERIAL2_SPEED);
     // sprintf(temp, "%d - CONNECT\r\n", millis());
-    if (rs485_cmd(temp, "PONG", &buf, &buf_size, &buf_allocated, 2000)) {
+    if (rs485_cmd("PING", "PONG", &buf, &buf_size, &buf_allocated, 2000)) {
 #if DEBUG_TRANSMISSION
         print_debug("TRsr", stdout, CCYAN, COLOR_NOHEAD_NOTAIL, "RS485 ");
 #endif

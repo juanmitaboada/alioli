@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include "key.h"
+
 // General config
 #define QUICK_START 0
 #define RTC 1
