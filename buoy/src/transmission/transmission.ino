@@ -718,7 +718,7 @@ void transmission_setup(long int now) {
 void transmission_loop(long int now) {
     char *buf=NULL, *answer=NULL;
     unsigned int buf_size=0, buf_allocated=0, answer_size=0, answer_allocated=0;
-    unsigned short int modem_error=0, rs485_error=0;
+    unsigned short int modem_error=0, modem_action=0, rs485_error=0, rs485_action=0;
 
     // Check transmission lookup
     if (transmission_config.nextevent<now) {
@@ -806,6 +806,7 @@ void transmission_loop(long int now) {
                         remote_msg(&buf, &buf_size, &buf_allocated, &answer, &answer_size, &answer_allocated);
                     } else {
                         // Check connection to the GSM module
+                        modem_action = 1;
                         modem_error = !modem_cmd("AT\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 100);
                         if (!modem_error) {
                             if (!bistrstr(buf, buf_size, "OK", 2)) {
@@ -825,11 +826,14 @@ void transmission_loop(long int now) {
                         || (transmission_config.ourip_nextevent<now)
                     ) {
 
+                    // This requires modem_actions
+
                     // Get back to AT mode
                     if (transmission_config.modem_linked) {
 #if DEBUG_TRANSMISSION
                         print_debug("TRl", stdout, CCYAN, 0, "Go to AT MODE");
 #endif
+                        modem_action = 1;
                         modem_error = !modem_cmd("+++", "OK", &buf, &buf_size, &buf_allocated, 3000, 0);
                     }
 
@@ -845,6 +849,7 @@ void transmission_loop(long int now) {
                             transmission_config.ourip_nextevent = now+TRANSMISSION_OURIP_MS;
 
                             // Send our IP
+                            modem_action = 1;
                             modem_error = modem_send_our_ip(&buf, &buf_size, &buf_allocated);
 
 #if DEBUG_MODEM_SETUP
@@ -863,6 +868,7 @@ void transmission_loop(long int now) {
                             transmission_config.webserver_nextevent = now+TRANSMISSION_WEBSERVER_MS;
 
                             // Check connection to the GSM module
+                            modem_action = 1;
                             modem_error = !modem_cmd("AT+SERVERSTART?\r\n", "+SERVERSTART: 0,", &buf, &buf_size, &buf_allocated, 500, 0);
                             if (modem_error && (!bistrstr(buf, buf_size, "+CIPEVENT: NETWORK CLOSED UNEXPECTEDLY", 38))) {
                                 modem_cmd("AT+NETCLOSE\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
@@ -880,6 +886,7 @@ void transmission_loop(long int now) {
 
                             // Get GPS position and timing
                             buf_size = 0;
+                            modem_action = 1;
                             modem_error = !modem_gps(&buf, &buf_size, &buf_allocated);
                         }
                     }
@@ -905,12 +912,17 @@ void transmission_loop(long int now) {
             // If it is a meesage for the ROV
             if (buf_size) {
 
+                // This is a RS485 action
+                rs485_action = 1;
+
                 // Send message to RS485
-                if (rs485_sendmsg(buf, buf_size)) {
+                rs485_error = !rs485_sendmsg(buf, buf_size);
+                if (!rs485_error) {
 
                     // Get answer
                     buf_size = 0;
-                    if (rs485_getmsg(&buf, &buf_size, &buf_allocated, TIMEOUT_RS485_MS, TRANSFER_RS485_WAIT_MS)) {
+                    rs485_error = !rs485_getmsg(&buf, &buf_size, &buf_allocated, TIMEOUT_RS485_MS, TRANSFER_RS485_WAIT_MS);
+                    if (!rs485_error) {
 
                         // Check if there is a message to process
                         if (buf_size) {
@@ -924,11 +936,7 @@ void transmission_loop(long int now) {
                             print_ashex(answer, answer_size, stderr);
 
                         }
-                    } else {
-                        rs485_error = 1;
                     }
-                } else {
-                    rs485_error = 1;
                 }
             }
 #endif
@@ -941,6 +949,7 @@ void transmission_loop(long int now) {
             if (answer_size) {
 
                 // Send answer to modem
+                modem_action = 1;
                 modem_error = !modem_sendmsg(answer, answer_size);
 
             }
@@ -957,31 +966,35 @@ void transmission_loop(long int now) {
             // === ERROR CHECKING === =====================================
 #ifdef MODEM_SERIAL
             // Check for errors in MODEM
-            if (!modem_error) {
+            if (modem_action) {
+                if (!modem_error) {
 
-                // There was no error, count one error less
-                if (transmission_config.modem_errors) {
-                    transmission_config.modem_errors--;
+                    // There was no error, count one error less
+                    if (transmission_config.modem_errors) {
+                        transmission_config.modem_errors--;
+                    }
+
+                } else {
+                    // There was an error, count one error more
+                    transmission_config.modem_errors++;
                 }
-
-            } else {
-                // There was an error, count one error more
-                transmission_config.modem_errors++;
             }
 #endif
 
 #ifdef RS485_SERIAL
             // Check for errors in RS485
-            if (!rs485_error) {
+            if (rs485_action) {
+                if (!rs485_error) {
 
-                // There was no error, count one error less
-                if (transmission_config.rs485_errors) {
-                    transmission_config.rs485_errors--;
+                    // There was no error, count one error less
+                    if (transmission_config.rs485_errors) {
+                        transmission_config.rs485_errors--;
+                    }
+
+                } else {
+                    // There was an error, count one error more
+                    transmission_config.rs485_errors++;
                 }
-
-            } else {
-                // There was an error, count one error more
-                transmission_config.rs485_errors++;
             }
 #endif
 
@@ -992,14 +1005,14 @@ void transmission_loop(long int now) {
 
 #ifdef MODEM_SERIAL
             // Check if we should RESET the MODEM (too many errors)
-            if (transmission_config.modem_errors>RESET_MODEM_AFTER_ERRORS) {
+            if (transmission_config.modem_errors>=RESET_MODEM_AFTER_ERRORS) {
                 transmission_config.modem_ready = 0;
             }
 #endif
 
 #ifdef RS485_SERIAL
             // Check if we should RESET the RS485 (too many errors)
-            if (transmission_config.rs485_errors>RESET_RS485_AFTER_ERRORS) {
+            if (transmission_config.rs485_errors>=RESET_RS485_AFTER_ERRORS) {
                 transmission_config.rs485_ready = 0;
             }
 #endif
