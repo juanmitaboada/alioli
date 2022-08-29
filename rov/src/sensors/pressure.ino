@@ -25,7 +25,7 @@ void pressure_setup(long int now) {
     // Initialize BMP
     counter=0;
     found=0;
-    found = bmp.begin();
+    found = bmp.begin(PRESSURE_SENSOR_ADDRESS);
     while (!found) {
         print_debug("BMP-SETUP", stdout, CPURPLE, 0, "Could not find a valid BMP sensor, check wiring or I2C ADDR!");
         delay(500);

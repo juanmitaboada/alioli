@@ -66,6 +66,9 @@
 #define TEMPERATURE_SENSOR_1 {0x28, 0x6A, 0x30, 0x45, 0x92,  0x5, 0x2, 0xD3}
 #define TEMPERATURE_SENSOR_2 {0x28, 0x2E, 0xEC, 0x45, 0x92, 0x15, 0x2, 0xE9}
 
+// Pressure
+#define PRESSURE_SENSOR_ADDRESS 0x76
+
 // Transmission
 // Valid speed (baud rates): 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 31250, 38400, 57600, and 115200
 #define SERIAL1_PINOUT 4            // Serial 1 digital pin connected to DE

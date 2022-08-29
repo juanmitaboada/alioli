@@ -69,7 +69,7 @@ void setup() {
 
     // Detect clock
 #if RTC
-    print_debug("SETUP", stdout, CRED, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
+    print_debug("SETUP", stdout, CCYAN, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
     while (!rtc.begin()) {
         print_debug("SETUP", stdout, CRED, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
         delay(1000);
@@ -124,6 +124,8 @@ void setup() {
     buoy.gps.speed = 0.0;
     buoy.gps.course = 0.0;
     buoy.gps.epoch = 0;
+
+    // Setup Internal LED
     digitalWrite(LED_BUILTIN, LOW);
     led_builtin_ts = millis();
     led_builtin_status = 0;

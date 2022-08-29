@@ -40,6 +40,13 @@
 #include "transmission/communication.ino"
 #include "transmission/transmission.ino"
 
+#ifndef LED_BUILTIN
+#define LED_BUILTIN 13
+#endif
+
+int led_builtin_ts=0;
+unsigned short int led_builtin_status=0;
+
 void setup() {
     DateTime datetime;
     unsigned long int now=0;
@@ -51,18 +58,45 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Starting bootloader... (if stuck here is because the CLOCK is not available!)");
 
+    // Starutp Internal LED
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+
+    // Prepare buffers
+#ifdef ARDUINO_ARCH_AVR
     // Prepare buffers
     fdev_setup_stream(&serial_stdout, serial_putchar, NULL, _FDEV_SETUP_WRITE);
     stdout = &serial_stdout;
     stderr = &serial_stdout;
+#else
+    stdout = NULL;
+    stderr = NULL;
+#endif
 
+    // Show header
     print_debug("SETUP", stdout, CBLUE, COLOR_NORTC_NORMAL, "%s v%s (Build: %s - %s)", SYSNAME, VERSION, BUILD_VERSION, BUILD_DATE);
+    delay(1000);
 
     // Detect clock
-    print_debug("SETUP", stdout, CRED, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
+#if RTC
+    print_debug("SETUP", stdout, CCYAN, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
     while (!rtc.begin()) {
         print_debug("SETUP", stdout, CRED, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
         delay(1000);
+        digitalWrite(LED_BUILTIN, LOW);
+        delay(1000);
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(1000);
+        digitalWrite(LED_BUILTIN, LOW);
+        delay(1000);
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(1000);
+        if (led_builtin_status) {
+            digitalWrite(LED_BUILTIN, LOW);
+        } else {
+            digitalWrite(LED_BUILTIN, HIGH);
+        }
+        led_builtin_status = !led_builtin_status;
     }
 
     if (rtc.lostPower()) {
@@ -72,6 +106,10 @@ void setup() {
 
     // Set millis offset
     rtc_millis_offset = millis();
+#else
+    print_debug("SETUP", stdout, CYELLOW, 0, "CLOCK not configured in your program!");
+    delay(3000);
+#endif
 
     // Get now
     now = millis();
@@ -90,6 +128,11 @@ void setup() {
     lights_dance(now);
 
     print_debug("SETUP", stdout, CGREEN, COLOR_NORMAL, "Ready");
+
+    // Setup Internal LED
+    digitalWrite(LED_BUILTIN, LOW);
+    led_builtin_ts = millis();
+    led_builtin_status = 0;
 }
 
 void loop() {
@@ -99,6 +142,19 @@ void loop() {
 #if DEBUG_MAIN
     print_debug("MAIN", stdout, CCYAN, COLOR_NORMAL, "START");
 #endif
+
+    // Show Internal LED flashing
+    if ((millis()-led_builtin_ts)<1000) {
+        // Update timestamp
+        led_builtin_ts = millis();
+        // Switch led
+        if (led_builtin_status) {
+            digitalWrite(LED_BUILTIN, LOW);
+        } else {
+            digitalWrite(LED_BUILTIN, HIGH);
+        }
+        led_builtin_status = !led_builtin_status;
+    }
 
     // === CONTROL ===
 #if DEBUG_MAIN
