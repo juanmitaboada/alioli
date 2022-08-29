@@ -651,7 +651,6 @@ unsigned short int rs485_setup() {
 
     // Initialize
     transmission_config.rs485_ready = 0;
-    transmission_config.rs485_ready = 1;
     transmission_config.rs485_errors = 0;
 
     // Connect link to ROV
@@ -894,6 +893,7 @@ void transmission_loop(long int now) {
                     }
 
                 }
+                buf_size = 0;
             }
 
 #endif
