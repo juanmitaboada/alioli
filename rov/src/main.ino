@@ -3,11 +3,13 @@
 
 // External libraries
 // #include <DS3231.h>             // RTC - Real Time Clock
+#if RTC
 #include <RTClib.h>             // RTC - Real Time Clock
-#include <AsyncTaskLib.h>       // AsyncTask
-#include <PID_v1.h>             // PID Controller
-#include <MedianFilterLib.h>    // Median Filter
-#include <AsyncServoLib.h>      // Async Servo
+#endif
+// #include <AsyncTaskLib.h>       // AsyncTask
+// #include <PID_v1.h>             // PID Controller
+// #include <MedianFilterLib.h>    // Median Filter
+// #include <AsyncServoLib.h>      // Async Servo
 #include <DallasTemperature.h>  // Temperature Sensor
 #include <OneWire.h>            // Temperature Sensor
 #ifdef GYROSCOPE_MPU

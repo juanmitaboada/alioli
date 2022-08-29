@@ -3,6 +3,7 @@
 
 // General config
 #define QUICK_START 1
+#define RTC 1
 
 // Debugger
 #define DEBUG_NO

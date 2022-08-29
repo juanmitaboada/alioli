@@ -7,14 +7,14 @@
 
 TransmissionConfig transmission_config;
 
-unsigned short int rs485_getmsg(char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait) {
+unsigned short int rs485_getmsg(char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer) {
     unsigned short int error=0;
 
     // Initialize
     (*buf_size) = 0;
 
 
-    error = !serial_recv(RS485_SERIAL, buf, buf_size, buf_allocated, wait);
+    error = !serial_recv(RS485_SERIAL, buf, buf_size, buf_allocated, wait, wait_transfer, 0);
 
     return !error;
 }
@@ -54,7 +54,7 @@ void transmission_loop(long int now) {
 
         // Get answer
         buf_size = 0;
-        if (rs485_getmsg(&buf, &buf_size, &buf_allocated, TIMEOUT_RS485_MS)) {
+        if (rs485_getmsg(&buf, &buf_size, &buf_allocated, TIMEOUT_RS485_MS, TRANSFER_RS485_WAIT_MS)) {
 
             // Check if there is a message to process
             if (buf_size) {
@@ -62,8 +62,8 @@ void transmission_loop(long int now) {
                     // Message detected
 #if DEBUG_TRANSMISSION_MSG
                     print_debug("TRl", stdout, CPURPLE, 0, "MSG:");
-                    print_asbin(buf, buf_size);
-                    print_ashex(buf, buf_size);
+                    print_asbin(buf, buf_size, stderr);
+                    print_ashex(buf, buf_size, stderr);
 #endif
 
                     // HELLO msg
