@@ -1,3 +1,4 @@
+#include "serial.h"
 #include "alioli.h"
 
 static char SERIAL_NAME[] ="SERIAL";
@@ -179,6 +180,7 @@ unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t 
     int incomingByte = 0;
     unsigned int start=0;
     long int bauds=0, waitbuffer=0;
+    size_t max_bytes = SERIAL_MAX_BYTES;
 
     if (0) {
 #ifdef SERIAL1_SPEED
@@ -186,17 +188,26 @@ unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t 
 #ifdef SERIAL1_CTRLPIN
         bauds = SERIAL1_SPEED;
 #endif
+#ifdef SERIAL1_MAX_BYTES
+        max_bytes = SERIAL1_MAX_BYTES;
+#endif
 #endif
 #ifdef SERIAL2_SPEED
     } else if (serial==2) {
 #ifdef SERIAL2_CTRLPIN
         bauds = SERIAL2_SPEED;
 #endif
+#ifdef SERIAL2_MAX_BYTES
+        max_bytes = SERIAL2_MAX_BYTES;
+#endif
 #endif
 #ifdef SERIAL3_SPEED
     } else if (serial==3) {
 #ifdef SERIAL3_CTRLPIN
         bauds = SERIAL3_SPEED;
+#endif
+#ifdef SERIAL3_MAX_BYTES
+        max_bytes = SERIAL3_MAX_BYTES;
 #endif
 #endif
     } else {
@@ -224,8 +235,8 @@ unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t 
         }
     }
 
-    // While data in the bus, process it
-    while (serial_available(serial)) {
+    // While data in the bus and not received MAX data transfer allowed per cycle, process it
+    while (serial_available(serial) && (*buf_size<max_bytes)) {
         incomingByte = serial_read(serial);
         if (incomingByte>=0) {
 

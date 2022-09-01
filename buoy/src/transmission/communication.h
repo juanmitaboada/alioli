@@ -2,7 +2,8 @@
 #define COMMUNICATION_H
 
 #include "lib/constants.h"
-#include "mavlink/alioli/mavlink.h"
+// #include "mavlink/alioli/mavlink.h"
+#include "mavlink/standard/mavlink.h"
 
 typedef struct TCommunicationConfig {
     char *mavlink_buf;

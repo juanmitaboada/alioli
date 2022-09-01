@@ -140,7 +140,7 @@ void loop() {
 #endif
 
     // Show Internal LED flashing
-    if ((millis()-led_builtin_ts)<1000) {
+    if ((millis()-led_builtin_ts)>1000) {
         // Update timestamp
         led_builtin_ts = millis();
         // Switch led
@@ -176,5 +176,4 @@ void loop() {
 
     // Loop control
     yield();
-    delay(10);
 }

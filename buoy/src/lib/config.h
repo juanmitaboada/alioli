@@ -52,15 +52,16 @@
 
 // Transmission
 // Valid speed (baud rates): 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 31250, 38400, 57600, and 115200
+#define SERIAL1_MAX_BYTES 512       // Serial 1 max bytes to read at once
 #define SERIAL1_SPEED 115200        // Serial 1 port speed or baud rates
 #define SERIAL2_SPEED 115200        // Serial 2 port speed or baud rates
-#define SERIAL2_TX_PIN 8           // Serial 2 pin for control the status of the module
-#define SERIAL2_RX_PIN 9           // Serial 2 pin for control the status of the module
+#define SERIAL2_TX_PIN 8            // Serial 2 pin for control the status of the module
+#define SERIAL2_RX_PIN 9            // Serial 2 pin for control the status of the module
 #define SERIAL2_CTRLPIN 3           // Serial 2 pin for control the status of the module
-#define TRANSMISSION_MS 500
+#define TRANSMISSION_MS 1
 #define TRANSMISSION_GPS_MS 10000
-#define TRANSMISSION_OURIP_MS 30000
-#define TRANSMISSION_WEBSERVER_MS 30000
+#define TRANSMISSION_OURIP_MS 50000
+#define TRANSMISSION_WEBSERVER_MS 60000
 #define MODEM_SERIAL 1
 #define RS485_SERIAL 2
 #define MODEM_PIN 2002

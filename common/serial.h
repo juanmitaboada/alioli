@@ -3,6 +3,8 @@
 
 #include "alioli.h"
 
+#define SERIAL_MAX_BYTES 2048
+
 size_t serial_write(int serial, const unsigned char *msg, size_t bytes);
 unsigned short int serial_flush(int serial);
 unsigned short int serial_available(int serial);

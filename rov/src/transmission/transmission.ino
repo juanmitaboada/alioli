@@ -69,17 +69,17 @@ void transmission_loop(long int now) {
                     // HELLO msg
                     if (!bistrcmp(buf, min(buf_size, (unsigned int) 4), "PING", 4)) {
 #if DEBUG_TRANSMISSION
-                        print_debug("TRl", stdout, CCYAN, 0, "LINK PING");
+                        print_debug("TRl", stdout, CCYAN, 0, "PING -> PONG");
 #endif
                         answer_size = 0;
                         strcat_realloc(&answer, &answer_size, &answer_allocated, "PONG\n", 5, __FILE__, __LINE__);
                         communication_reset();
 
-                    // MAVLINK msg
+                    // Remote msg
                     } else {
                         // Process message locally if linked to external system
 #if DEBUG_TRANSMISSION_MSG
-                        print_debug("TRl", stdout, CCYAN, 0, "LINK MAVLINK");
+                        print_debug("TRl", stdout, CCYAN, 0, "REMOTE MSG");
 #endif
                         answer_size = 0;
                         remote_msg(&buf, &buf_size, &buf_allocated, &answer, &answer_size, &answer_allocated);

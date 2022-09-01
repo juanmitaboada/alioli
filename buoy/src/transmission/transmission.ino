@@ -228,8 +228,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "RESET");
 #endif
-        error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
-        delay(2000);
+        error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 2000);
     }
 
     // Remove ECHO
@@ -724,7 +723,7 @@ void transmission_loop(long int now) {
     if (transmission_config.nextevent<now) {
 
 #if DEBUG_TRANSMISSION
-        print_debug("TRl", stdout, CGREEN, 0, "ALIVE (MODEM errors: %d, RS485 errors: %d)", transmission_config.modem_errors, transmission_config.rs485_errors);
+        // print_debug("TRl", stdout, CGREEN, 0, "ALIVE (MODEM errors: %d, RS485 errors: %d)", transmission_config.modem_errors, transmission_config.rs485_errors);
 #endif
 
         // Set next event
@@ -737,9 +736,16 @@ void transmission_loop(long int now) {
 
             // === GET REQUEST FROM BASE === ==================================
 
-            // Get remote MSG if any (and leave client waiting)
+            // Read from buffer if no other task must to be done
             buf_size = 0;
-            modem_error = !modem_getmsg(&buf, &buf_size, &buf_allocated, 0, TRANSFER_MODEM_WAIT_MS);
+            if (
+                   (transmission_config.gps_nextevent>=now)
+                && (transmission_config.webserver_nextevent>=now)
+                && (transmission_config.ourip_nextevent>=now)
+            ) {
+                // Get remote MSG if any (and leave client waiting)
+                modem_error = !modem_getmsg(&buf, &buf_size, &buf_allocated, TIMEOUT_MODEM_MS, TRANSFER_MODEM_WAIT_MS);
+            }
 
             // If no error
             if (!modem_error) {
@@ -829,66 +835,68 @@ void transmission_loop(long int now) {
                     // This requires modem_actions
 
                     // Get back to AT mode
+                    /*
                     if (transmission_config.modem_linked) {
 #if DEBUG_TRANSMISSION
                         print_debug("TRl", stdout, CCYAN, 0, "Go to AT MODE");
 #endif
-                        modem_action = 1;
-                        modem_error = !modem_cmd("+++", "OK", &buf, &buf_size, &buf_allocated, 3000, 0);
+                        // modem_error = !modem_cmd("+++", "OK", &buf, &buf_size, &buf_allocated, 0, 1000);
+                        serial_cmd(MODEM_SERIAL, "TRl", "+++", NULL, &buf, &buf_size, &buf_allocated, 0, 1000, 0);
                     }
+                    */
+                    serial_cmd(MODEM_SERIAL, "TRl", "+++", NULL, &buf, &buf_size, &buf_allocated, 0, 1000, 0);
 
-                    // Check if no error happened (execute one command at a time)
-                    if (!modem_error) {
-
-                        // === SEND OUR IP ADDRESS ===
-                        if (transmission_config.ourip_nextevent<now) {
+                    // === SEND OUR IP ADDRESS ===
+                    if ((!modem_error) && (transmission_config.ourip_nextevent<now)) {
 #if DEBUG_TRANSMISSION
-                            print_debug("TRl", stdout, CCYAN, 0, "Send our IP ADDRESS");
+                        print_debug("TRl", stdout, CCYAN, 0, "Send our IP ADDRESS");
 #endif
-                            // Set next event
-                            transmission_config.ourip_nextevent = now+TRANSMISSION_OURIP_MS;
+                        // Set next event
+                        transmission_config.ourip_nextevent = now+TRANSMISSION_OURIP_MS;
 
-                            // Send our IP
-                            modem_action = 1;
-                            modem_error = modem_send_our_ip(&buf, &buf_size, &buf_allocated);
+                        // Send our IP
+                        modem_action = 1;
+                        modem_error = modem_send_our_ip(&buf, &buf_size, &buf_allocated);
 
 #if DEBUG_MODEM_SETUP
-                            if (!modem_error) {
-                                print_debug("TRl", stdout, CCYAN, 0, "Our IP Address has been registered SUCESSFULLY");
-                            }
-#endif
-                        // === GET WEBSERVER STATUS ===
-                        } else if (transmission_config.webserver_nextevent<now) {
-
-#if DEBUG_TRANSMISSION
-                            print_debug("TRl", stdout, CCYAN, 0, "CHECK WEBSERVER STATUS");
-#endif
-
-                            // Set next event
-                            transmission_config.webserver_nextevent = now+TRANSMISSION_WEBSERVER_MS;
-
-                            // Check connection to the GSM module
-                            modem_action = 1;
-                            modem_error = !modem_cmd("AT+SERVERSTART?\r\n", "+SERVERSTART: 0,", &buf, &buf_size, &buf_allocated, 500, 0);
-                            if (modem_error && (!bistrstr(buf, buf_size, "+CIPEVENT: NETWORK CLOSED UNEXPECTEDLY", 38))) {
-                                modem_cmd("AT+NETCLOSE\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
-                            }
-
-                        // === GET GPS POSITION ===
-                        } else if (transmission_config.gps_nextevent<now) {
-
-#if DEBUG_TRANSMISSION
-                            print_debug("TRl", stdout, CCYAN, 0, "REQUEST GPS POSITION");
-#endif
-
-                            // Set next event
-                            transmission_config.gps_nextevent = now+TRANSMISSION_GPS_MS;
-
-                            // Get GPS position and timing
-                            buf_size = 0;
-                            modem_action = 1;
-                            modem_error = !modem_gps(&buf, &buf_size, &buf_allocated);
+                        if (!modem_error) {
+                            print_debug("TRl", stdout, CCYAN, 0, "Our IP Address has been registered SUCESSFULLY");
                         }
+#endif
+                    }
+
+                    // === GET WEBSERVER STATUS ===
+                    if ((!modem_error) && (transmission_config.webserver_nextevent<now)) {
+
+#if DEBUG_TRANSMISSION
+                        print_debug("TRl", stdout, CCYAN, 0, "CHECK WEBSERVER STATUS");
+#endif
+
+                        // Set next event
+                        transmission_config.webserver_nextevent = now+TRANSMISSION_WEBSERVER_MS;
+
+                        // Check connection to the GSM module
+                        modem_action = 1;
+                        modem_error = !modem_cmd("AT+SERVERSTART?\r\n", "+SERVERSTART: 0,", &buf, &buf_size, &buf_allocated, 100, 0);
+                        if (modem_error && (!bistrstr(buf, buf_size, "+CIPEVENT: NETWORK CLOSED UNEXPECTEDLY", 38))) {
+                            modem_cmd("AT+NETCLOSE\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
+                        }
+                    }
+
+                    // === GET GPS POSITION ===
+                    if ((!modem_error) && (transmission_config.gps_nextevent<now)) {
+
+#if DEBUG_TRANSMISSION
+                        print_debug("TRl", stdout, CCYAN, 0, "REQUEST GPS POSITION");
+#endif
+
+                        // Set next event
+                        transmission_config.gps_nextevent = now+TRANSMISSION_GPS_MS;
+
+                        // Get GPS position and timing
+                        buf_size = 0;
+                        modem_action = 1;
+                        modem_error = !modem_gps(&buf, &buf_size, &buf_allocated);
                     }
 
                     // Go back to DATA mode
@@ -896,7 +904,13 @@ void transmission_loop(long int now) {
 #if DEBUG_TRANSMISSION
                         print_debug("TRl", stdout, CCYAN, 0, "Go back to DATA MODE");
 #endif
-                        serial_cmd(MODEM_SERIAL, "TRl", "ATO\r\n", "CONNECT", &buf, &buf_size, &buf_allocated, 1000, 0, 1);
+                        serial_cmd(MODEM_SERIAL, "TRl", "ATO\r\n", "CONNECT", &buf, &buf_size, &buf_allocated, 100, 0, 1);
+
+                        // Connection has been closed, we are not linked anymore
+                        if (bistrstr(buf, buf_size, "NO CARRIER", 10)) {
+                            transmission_config.modem_linked = 0;
+                        }
+
                     }
 
                 }
@@ -1040,8 +1054,4 @@ void transmission_loop(long int now) {
     if (buf) {
         free(buf);
     }
-
-    // Loop control
-    delay(10);
-
 }

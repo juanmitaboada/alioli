@@ -28,7 +28,9 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
     unsigned int buf_idx=0;
 
     // Put all together
-    strcat_realloc(&communication_config.mavlink_buf, &communication_config.mavlink_buf_size, &communication_config.mavlink_buf_allocated, *buf, *buf_size, __FILE__, __LINE__);
+    if (*buf_size) {
+        strcat_realloc(&communication_config.mavlink_buf, &communication_config.mavlink_buf_size, &communication_config.mavlink_buf_allocated, *buf, *buf_size, __FILE__, __LINE__);
+    }
     // print_ashex(communication_config.mavlink_buf, communication_config.mavlink_buf_size, stderr);
 
     // While data in the buffer and not MAVLINK message detected, keep reading
@@ -121,10 +123,16 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                     }
                     break;
 
+                case MAVLINK_MSG_ID_MANUAL_CONTROL:
+                    {
+                        // Decode message
+                        mavlink_manual_control_t man;
+                        mavlink_msg_manual_control_decode(&msg, &man);
+                    }
+                    break;
                 default:
                     //Do nothing
                     print_debug(CCOMMUNICATION, stdout, CYELLOW, 0, "Unknown message with ID %d, sequence: %d from component %d of system %d", msg.msgid, msg.seq, msg.compid, msg.sysid);
-                    break;
             }
         }
 
@@ -183,7 +191,7 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
              len = mavlink_msg_to_send_buffer((uint8_t *) heartbeat, &msg);
             if (serial_send(RS485_SERIAL, heartbeat, len)) {
             }
-            delay(100);
+            // delay(100);
         }
         buf_idx++;
     }
@@ -191,7 +199,7 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
     if (!gotmsg) {
         print_debug(CCOMMUNICATION, stderr, CRED, 0, "ERROR: didn't get MAVLINK message");
     }
-    delay(1000);
+    // delay(1000);
 
     return gotmsg;
 }
