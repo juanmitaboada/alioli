@@ -755,8 +755,10 @@ void transmission_loop(long int now) {
 
                     // Message detected
 #if DEBUG_TRANSMISSION_MSG
-                    print_debug("TRl", stdout, CPURPLE, 0, "MSG:");
-                    print_asbin(buf, buf_size, stderr);
+                    print_debug("TRl", stdout, CPURPLE, 0, "MSG with %ld bytes", buf_size);
+#endif
+#if DEBUG_TRANSMISSION_MSG
+                    // print_asbin(buf, buf_size, stderr);
                     print_ashex(buf, buf_size, stderr);
 #endif
 
@@ -825,7 +827,7 @@ void transmission_loop(long int now) {
                         }
                     }
 
-                // No data in the BUS, chec if there is work to do
+                // No data in the BUS, check if there is work to do
                 } else if (
                            (transmission_config.gps_nextevent<now)
                         || (transmission_config.webserver_nextevent<now)
@@ -946,7 +948,7 @@ void transmission_loop(long int now) {
 
                             // RS485 data found
                             print_debug("TRl", stdout, CPURPLE, 0, "RS485:");
-                            print_asbin(answer, answer_size, stderr);
+                            // print_asbin(answer, answer_size, stderr);
                             print_ashex(answer, answer_size, stderr);
 
                         }

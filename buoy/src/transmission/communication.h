@@ -9,6 +9,8 @@ typedef struct TCommunicationConfig {
     char *mavlink_buf;
     unsigned int mavlink_buf_size;
     unsigned int mavlink_buf_allocated;
+    mavlink_status_t status;
+    mavlink_message_t msg;
 } CommunicationConfig;
 
 mavlink_system_t mavlink_system = {

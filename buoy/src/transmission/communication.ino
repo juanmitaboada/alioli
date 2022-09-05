@@ -21,8 +21,6 @@ unsigned short int mavlink_msgcat(char **answer, unsigned int *answer_size, unsi
 }
 
 unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *buf_allocated, char **answer, unsigned int *answer_size, unsigned int *answer_allocated) {
-    mavlink_status_t status;
-    mavlink_message_t msg;
     int chan = MAVLINK_COMM_0; // , len=0;
     unsigned short int gotmsg=0, bypass=0;
     unsigned int buf_idx=0;
@@ -38,14 +36,14 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
     while (buf_idx<communication_config.mavlink_buf_size) {
 
         // Parse MAVLINK mg
-        if (mavlink_parse_char(chan, (uint8_t) communication_config.mavlink_buf[buf_idx], &msg, &status)) {
+        if (mavlink_parse_char(chan, (uint8_t) communication_config.mavlink_buf[buf_idx], &(communication_config.msg), &(communication_config.status))) {
 
             // Say we got a MAVLINK message
             gotmsg=1;
             // ... DECODE THE MESSAGE PAYLOAD HERE ...
             // https://mavlink.io/kr/messages/common.html
 
-            switch(msg.msgid) {
+            switch(communication_config.msg.msgid) {
                 case MAVLINK_MSG_ID_HEARTBEAT:
                     // bypass=1;
                     {
@@ -53,73 +51,73 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         // uint8_t received_sysid = msg.sysid;
                         // uint8_t received_compid = msg.compid;
                         mavlink_heartbeat_t packet;
-                        mavlink_msg_heartbeat_decode(&msg, &packet);
+                        mavlink_msg_heartbeat_decode(&(communication_config.msg), &packet);
 
                         //sending the heartbeat
-                        mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &msg, MAV_TYPE_SUBMARINE, MAV_AUTOPILOT_INVALID, MAV_MODE_GUIDED_ARMED, 0, MAV_STATE_ACTIVE);
-                        mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
+                        mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), MAV_TYPE_SUBMARINE, MAV_AUTOPILOT_INVALID, MAV_MODE_GUIDED_ARMED, 0, MAV_STATE_ACTIVE);
+                        mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
 
-                        // mavlink_msg_vfr_hud_pack(mavlink_system.sysid, mavlink_system.compid, &msg , 3, 2, 45, 1, 10, 1);
-                        // mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
+                        // mavlink_msg_vfr_hud_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), 3, 2, 45, 1, 10, 1);
+                        // mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
 
-                        // mavlink_msg_gps_global_origin_pack(mavlink_system.sysid, mavlink_system.compid, &msg , 29.4*pow(10,7), -13.51*pow(10, 7), 15, 1646238463);
-                        // mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
+                        // mavlink_msg_gps_global_origin_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), 29.4*pow(10,7), -13.51*pow(10, 7), 15, 1646238463);
+                        // mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
 
                         // GPS position
-                        mavlink_msg_global_position_int_pack(mavlink_system.sysid, mavlink_system.compid, &msg, millis(), buoy.gps.latitude*pow(10,7), buoy.gps.longitude*pow(10, 7), buoy.gps.altitude, buoy.gps.altitude, 0, 0, 0, 45);
-                        mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
+                        mavlink_msg_global_position_int_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), millis(), buoy.gps.latitude*pow(10,7), buoy.gps.longitude*pow(10, 7), buoy.gps.altitude, buoy.gps.altitude, 0, 0, 0, 45);
+                        mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
                         print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "GPS: %f - %f - %f", buoy.gps.latitude, buoy.gps.longitude, buoy.gps.altitude);
 
                         // Attitude
-                        mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &msg, millis(), 45.0, 45.0, 45.0, 0.0, 0.0, 0.0);
-                        mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
+                        mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), millis(), 45.0, 45.0, 45.0, 0.0, 0.0, 0.0);
+                        mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
 
                         // GPS_RAW_INT
                         // GPS_STATUS
                         // ATTITUDE
 /*
-                        mavlink_msg_vfr_hud_pack(received_sysid, received_compid, &msg , 3, 2, 45, 1, 10, 1);
-                        mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
-                        mavlink_msg_gps_global_origin_pack(received_sysid, received_compid, &msg , 36.715831516305*pow(10,7), -4.19757573985523*pow(10, 7), 15, 1646238463);
-                        mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
-                        mavlink_msg_global_position_int_pack(received_sysid, received_compid, &msg, millis(), 36.715831516305*pow(10,7), -4.19757573985523*pow(10, 7), 15, 15, 0, 0, 0, 45);
-                        mavlink_msgcat(answer, answer_size, answer_allocated, &msg);
+                        mavlink_msg_vfr_hud_pack(received_sysid, received_compid, &(communication_config.msg), 3, 2, 45, 1, 10, 1);
+                        mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
+                        mavlink_msg_gps_global_origin_pack(received_sysid, received_compid, &(communication_config.msg), 36.715831516305*pow(10,7), -4.19757573985523*pow(10, 7), 15, 1646238463);
+                        mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
+                        mavlink_msg_global_position_int_pack(received_sysid, received_compid, &(communication_config.msg), millis(), 36.715831516305*pow(10,7), -4.19757573985523*pow(10, 7), 15, 15, 0, 0, 0, 45);
+                        mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
 */
 
                         //sending the ping
-                        // mavlink_msg_ping_pack(mavlink_system.sysid, mavlink_system.compid, &msg, 93372036854775807ULL, 963497880, received_sysid, received_compid);
-                        // len = mavlink_msg_to_send_buffer(buffer, &msg);
+                        // mavlink_msg_ping_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), 93372036854775807ULL, 963497880, received_sysid, received_compid);
+                        // len = mavlink_msg_to_send_buffer(buffer, &(communication_config.msg));
                         // sendport(len);
                     }
                     break;
 
                 case MAVLINK_MSG_ID_COMMAND_LONG:
                     {
-                        // print_debug(CCOMMUNICATION, stdout, CBLUE, 0, "COMMAND_LONG: %d, sequence: %d from component %d of system %d", msg.msgid, msg.seq, msg.compid, msg.sysid);
+                        // print_debug(CCOMMUNICATION, stdout, CBLUE, 0, "COMMAND_LONG: %d, sequence: %d from component %d of system %d", communication_config.msg.msgid, communication_config.msg.seq, communication_config.msg.compid, communication_config.msg.sysid);
                         // mavlink_msg_command_long_decode
-                        if (mavlink_msg_command_long_get_param1(&msg)==MAV_CMD_REQUEST_MESSAGE) {
-                            // print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "COMMAND_LONG: %f", mavlink_msg_command_long_get_param1(&msg));
+                        if (mavlink_msg_command_long_get_param1(&(communication_config.msg))==MAV_CMD_REQUEST_MESSAGE) {
+                            // print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "COMMAND_LONG: %f", mavlink_msg_command_long_get_param1(&(communication_config.msg)));
                         } else {
-                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "COMMAND_LONG: unknown CMD id %d", mavlink_msg_command_long_get_command(&msg));
+                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "COMMAND_LONG: unknown CMD id %d", mavlink_msg_command_long_get_command(&(communication_config.msg)));
                         }
                     }
                     break;
 
                 case MAVLINK_MSG_ID_PARAM_REQUEST_LIST:
                     {
-                        // uint8_t received_sysid = msg.sysid;
-                        // uint8_t received_compid = msg.compid;
+                        // uint8_t received_sysid = communication_config.msg.sysid;
+                        // uint8_t received_compid = communication_config.msg.compid;
                         mavlink_param_request_list_t request;
-                        mavlink_msg_param_request_list_decode(&msg, &request);
+                        mavlink_msg_param_request_list_decode(&(communication_config.msg), &request);
                         mavlink_param_union_t paramUnion;
                         // const char *param_id="heading";
 
                         paramUnion.param_float = 45.0;
                         paramUnion.type = MAV_PARAM_TYPE_REAL32;
 
-                        print_debug(CCOMMUNICATION, stdout, CBLUE, 0, "REQUEST LIST: %d, sequence: %d from component %d of system %d - Sending %f", msg.msgid, msg.seq, msg.compid, msg.sysid, paramUnion.param_float);
+                        print_debug(CCOMMUNICATION, stdout, CBLUE, 0, "REQUEST LIST: %d, sequence: %d from component %d of system %d - Sending %f", communication_config.msg.msgid, communication_config.msg.seq, communication_config.msg.compid, communication_config.msg.sysid, paramUnion.param_float);
 
-                        // mavlink_msg_param_set_pack(mavlink_system.sysid, mavlink_system.compid, &msg, msg.sysid, msg.compid, param_id, paramUnion.param_float, paramUnion.type);
+                        // mavlink_msg_param_set_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), communication_config.msg.sysid, communication_config.msg.compid, param_id, paramUnion.param_float, paramUnion.type);
                     }
                     break;
 
@@ -127,12 +125,12 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                     {
                         // Decode message
                         mavlink_manual_control_t man;
-                        mavlink_msg_manual_control_decode(&msg, &man);
+                        mavlink_msg_manual_control_decode(&(communication_config.msg), &man);
                     }
                     break;
                 default:
                     //Do nothing
-                    print_debug(CCOMMUNICATION, stdout, CYELLOW, 0, "Unknown message with ID %d, sequence: %d from component %d of system %d", msg.msgid, msg.seq, msg.compid, msg.sysid);
+                    print_debug(CCOMMUNICATION, stdout, CYELLOW, 0, "Unknown message with ID %d, sequence: %d from component %d of system %d", communication_config.msg.msgid, communication_config.msg.seq, communication_config.msg.compid, communication_config.msg.sysid);
             }
         }
 
