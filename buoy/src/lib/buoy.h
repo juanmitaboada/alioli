@@ -9,6 +9,7 @@ struct TBuoyGPS {
     float speed;
     float course;
     unsigned long int epoch;
+    unsigned short int newdata;
 };
 typedef struct TBuoyGPS BuoyGPS;
 
@@ -23,6 +24,7 @@ struct TBuoyAcel {
     float angx;
     float angy;
     float angz;
+    unsigned short int newdata;
 };
 typedef struct TBuoyAcel BuoyAcel;
 

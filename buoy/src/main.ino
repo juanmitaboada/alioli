@@ -124,6 +124,9 @@ void setup() {
     buoy.gps.speed = 0.0;
     buoy.gps.course = 0.0;
     buoy.gps.epoch = 0;
+    buoy.gps.newdata = 0;
+    // Acelerometer (DUMMY)
+    buoy.acel.newdata = 1;
 
     // Setup Internal LED
     digitalWrite(LED_BUILTIN, LOW);

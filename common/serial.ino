@@ -260,16 +260,18 @@ unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t 
             error = 1;
         }
 
-        // Wait until another byte arrives
-        // (bauds/10=bytes/sec, bauds/10/1000 = bytes/msec, bytes/speed = ms to wait + 1)
-        waitbuffer = bauds/10.0;
-        if (waitbuffer>=1000) {
-            waitbuffer = waitbuffer / 1000;
-        } else {
-            waitbuffer = 1;
+        // If no more data, give some time so another byte arrives
+        if (!serial_available(serial)) {
+            // (bauds/10=bytes/sec, bauds/10/1000 = bytes/msec, bytes/speed = ms to wait + 1)
+            waitbuffer = bauds/10.0;
+            if (waitbuffer>=1000) {
+                waitbuffer = waitbuffer / 1000;
+            } else {
+                waitbuffer = 1;
+            }
+            delay(1+waitbuffer);
+            yield();
         }
-        delay(1+waitbuffer);
-        yield();
     }
 
     return !error;

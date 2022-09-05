@@ -63,14 +63,29 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         // mavlink_msg_gps_global_origin_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), 29.4*pow(10,7), -13.51*pow(10, 7), 15, 1646238463);
                         // mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
 
-                        // GPS position
-                        mavlink_msg_global_position_int_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), millis(), buoy.gps.latitude*pow(10,7), buoy.gps.longitude*pow(10, 7), buoy.gps.altitude, buoy.gps.altitude, 0, 0, 0, 45);
-                        mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
-                        print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "GPS: %f - %f - %f", buoy.gps.latitude, buoy.gps.longitude, buoy.gps.altitude);
+                        // If new data from GPS
+                        if (buoy.gps.newdata) {
 
-                        // Attitude
-                        mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), millis(), 45.0, 45.0, 45.0, 0.0, 0.0, 0.0);
-                        mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
+                            // Send GPS position
+                            mavlink_msg_global_position_int_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), millis(), buoy.gps.latitude*pow(10,7), buoy.gps.longitude*pow(10, 7), buoy.gps.altitude, buoy.gps.altitude, 0, 0, 0, 45);
+                            mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
+                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "GPS: %f - %f - %f", buoy.gps.latitude, buoy.gps.longitude, buoy.gps.altitude);
+
+                            // The data is not new anymore
+                            buoy.gps.newdata = 0;
+                        }
+
+                        // If new attitude data
+                        if (buoy.acel.newdata) {
+
+                            // Send attitude
+                            mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.msg), millis(), 45.0, 45.0, 45.0, 0.0, 0.0, 0.0);
+                            mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.msg));
+
+                            // The data is not new anymore
+                            buoy.acel.newdata = 0;
+
+                        }
 
                         // GPS_RAW_INT
                         // GPS_STATUS
@@ -126,6 +141,7 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         // Decode message
                         mavlink_manual_control_t man;
                         mavlink_msg_manual_control_decode(&(communication_config.msg), &man);
+                        print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "MANUAL_CONTROL: (%d, %d, %d, %d) - B:(%d, %d) EXT:%d", man.x, man.y, man.z, man.r, man.buttons, man.buttons2, man.enabled_extensions);
                     }
                     break;
                 default:
