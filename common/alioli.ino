@@ -439,6 +439,29 @@ unsigned short int getnumber(char* input, int *integer, double *real, char **str
     return result;
 }
 
+// Convert an interger to bytes
+char* int2char(unsigned int number, unsigned short int bytes) {
+    char *res = NULL;
+    unsigned short int chr=0;
+
+    // Allocate memory
+    res = (char*) malloc(bytes, sizeof(char));
+
+    // If we got memory
+    if (res) {
+
+        // Write the number byte by byte
+        for (; bytes>0; bytes--) {
+            chr = number % 256;
+            number = floor(number / 256);
+            res[bytes-1] = (char) chr;
+        }
+
+    }
+
+    return res;
+}
+
 
 // === STRING MANAGEMENT ===
 

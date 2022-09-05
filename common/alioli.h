@@ -1,7 +1,7 @@
 #ifndef ALIOLI_H
 #define ALIOLI_H
 
-#define ALIOLI_VERSION "1.1"
+#define ALIOLI_VERSION "1.2"
 #define PREALLOCSIZE 256
 #define PRINT_AS_LINE 30
 #define COLOR_MAX_BUFFER 2048
@@ -66,6 +66,9 @@ unsigned long int chr2dec(char **source, int length);
 
 // Check if the field is a pure number (0:empty, 1:integer, 2:double, 3:string)
 unsigned short int getnumber(char* input, int *integer, double *real, char **string, unsigned short int convert);
+
+// Convert an interger to bytes
+char* int2char(unsigned int number, unsigned short int bytes);
 
 
 // === STRING MANAGEMENT ===
