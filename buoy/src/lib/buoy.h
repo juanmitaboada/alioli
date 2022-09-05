@@ -1,6 +1,8 @@
 #ifndef BUOY_H
 #define BUOY_H
 
+#include "common/protocol.h"
+
 // === BUOY ACELEROMETER ===
 struct TBuoyGPS {
     float latitude;
