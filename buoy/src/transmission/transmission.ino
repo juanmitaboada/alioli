@@ -912,6 +912,9 @@ void transmission_loop(long int now) {
                         // Connection has been closed, we are not linked anymore
                         if (bistrstr(buf, buf_size, "NO CARRIER", 10)) {
                             transmission_config.modem_linked = 0;
+#if DEBUG_TRANSMISSION
+                            print_debug("TRl", stdout, CRED, 0, "LINK LOST!");
+#endif
                         }
 
                     }

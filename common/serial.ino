@@ -154,18 +154,20 @@ unsigned short int serial_send(int serial, const char *msg, size_t bytes) {
             }
         }
 
-        // Wait until all bytes have been sent
-        // (bauds/10=bytes/sec, bauds/10/1000 = bytes/msec, bytes/speed = ms to wait + 1)
-        waitbuffer = bauds/10.0;
-        if (waitbuffer>=1000) {
-            waitbuffer = waitbuffer / 1000;
-        } else {
-            waitbuffer = 1;
-        }
-        delay(1+waitbuffer);
-
         // Finish sending
         if (ctrlpin>=0) {
+
+            // Set slow down system for devices that needs it, we will wait until all bytes have been sent
+            // (bauds/10=bytes/sec, bauds/10/1000 = bytes/msec, bytes/speed = ms to wait + 1)
+            waitbuffer = bauds/10.0;
+            if (waitbuffer>=1000) {
+                waitbuffer = waitbuffer / 1000;
+            } else {
+                waitbuffer = 1;
+            }
+            delay(1+waitbuffer);
+
+            // Disable sending
             digitalWrite(ctrlpin, LOW);
         }
 

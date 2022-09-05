@@ -141,7 +141,23 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         // Decode message
                         mavlink_manual_control_t man;
                         mavlink_msg_manual_control_decode(&(communication_config.msg), &man);
-                        print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "MANUAL_CONTROL: (%d, %d, %d, %d) - B:(%d, %d) EXT:%d", man.x, man.y, man.z, man.r, man.buttons, man.buttons2, man.enabled_extensions);
+                        // print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "MANUAL_CONTROL: (%d, %d, %d, %d) - B:(%d, %d) EXT:%d", man.x, man.y, man.z, man.r, man.buttons, man.buttons2, man.enabled_extensions);
+                        buoy.user.x = man.x;
+                        buoy.user.y = man.y;
+                        buoy.user.z = man.z;
+                        buoy.user.r = man.r;
+                        buoy.user.buttons1 = man.buttons1;
+                        buoy.user.buttons2 = man.buttons2;
+                        if (man.extension & 1) {
+                            buoy.user.pitch = man.s;
+                        } else {
+                            buoy.user.pitch = 0;
+                        }
+                        if (man.extension & 2) {
+                            buoy.user.roll = man.t;
+                        } else {
+                            buoy.user.roll = 0;
+                        }
                     }
                     break;
                 default:

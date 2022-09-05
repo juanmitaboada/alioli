@@ -29,12 +29,15 @@ struct TBuoyAcel {
 typedef struct TBuoyAcel BuoyAcel;
 
 struct TUserRequest {
-    float x;          // X target
-    float y;          // Y target
-    float z;          // Z target
-    float dir;      // Grades 90º is North
-    float acel;     // Between -5 and 5
-    long int lastrequest;
+    signed int x;                   // X-axis [-1000, +1000]
+    signed int y;                   // Y-axis [-1000, +1000]
+    signed int z;                   // Z-axis [-1000, +1000]
+    signed int r;                   // R-axis [-1000, +1000]
+    unsigned int buttons1;          // Buttons 1 :: Bits [but15, but14, ..., but1]
+    unsigned int buttons2;          // Buttons 2 :: Bits [but31, but30, ..., but16]
+    unsigned short int extension;   // Extensions enabled:   0:pitch    1:roll
+    signed int pitch;               // Pitch [-1000, +1000]
+    signed int roll;                // Roll  [-1000, +1000]
 };
 typedef struct TUserRequest UserRequest;
 
