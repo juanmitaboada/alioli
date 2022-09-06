@@ -7,6 +7,7 @@
 #define COLOR_MAX_BUFFER 2048
 #define PRINT_DEBUG_OVERFLOW_STRING " [...]"
 #define ALIOLI_PRINT_AS_TEMP_LEN 50
+#define uint8_t byte
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,10 @@
 
 #include "color.h"
 #include "half.h"
+
+
+// === PREPROCESSOR ===
+#define FIELD_SIZEOF(t, f) (sizeof(((t*)0)->f))
 
 // === SERIAL PORT CONTROLLER ===
 // Function that printf and related will use to print
