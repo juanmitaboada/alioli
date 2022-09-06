@@ -445,7 +445,7 @@ char* int2char(unsigned int number, unsigned short int bytes) {
     unsigned short int chr=0;
 
     // Allocate memory
-    res = (char*) malloc(bytes, sizeof(char));
+    res = (char*) malloc(bytes * sizeof(char));
 
     // If we got memory
     if (res) {

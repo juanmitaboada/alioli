@@ -20,6 +20,7 @@
 #include "lib/shared.h"
 #include "lib/common/alioli.ino"
 #include "lib/common/serial.ino"
+#include "lib/common/protocol.ino"
 #include "transmission/transmission.ino"
 #include "transmission/communication.ino"
 

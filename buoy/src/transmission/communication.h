@@ -15,8 +15,8 @@ typedef struct TCommunicationConfig {
     char *alioli_protocol_buf;
     unsigned int alioli_protocol_buf_size;
     unsigned int alioli_protocol_buf_allocated;
-    AlioliProtocol alioli_protocol_package;
-    AlioliProtocolStatus aliolio_protocol_status;
+    AlioliProtocol alioli_protocol_msg;
+    AlioliProtocolStatus alioli_protocol_status;
 } CommunicationConfig;
 
 mavlink_system_t mavlink_system = {

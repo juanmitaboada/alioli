@@ -24,8 +24,10 @@ unsigned short int mavlink_msgcat(char **answer, unsigned int *answer_size, unsi
 }
 
 unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *buf_allocated, char **answer, unsigned int *answer_size, unsigned int *answer_allocated) {
-    int chan = MAVLINK_COMM_0; // , len=0;
-    unsigned short int gotmsg=0, bypass=0;
+    // int len=0;
+    // unsigned short int bypass=0;
+    int chan = MAVLINK_COMM_0;
+    unsigned short int gotmsg=0;
     unsigned int buf_idx=0;
 
     // Put all together
@@ -149,14 +151,14 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         buoy.user.y = man.y;
                         buoy.user.z = man.z;
                         buoy.user.r = man.r;
-                        buoy.user.buttons1 = man.buttons1;
+                        buoy.user.buttons1 = man.buttons;
                         buoy.user.buttons2 = man.buttons2;
-                        if (man.extension & 1) {
+                        if (man.enabled_extensions & 1) {
                             buoy.user.pitch = man.s;
                         } else {
                             buoy.user.pitch = 0;
                         }
-                        if (man.extension & 2) {
+                        if (man.enabled_extensions & 2) {
                             buoy.user.roll = man.t;
                         } else {
                             buoy.user.roll = 0;
@@ -176,10 +178,12 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
     yield();
 
     // If requested, bypass message
+    /*
     (*buf_size) = 0;
     if (bypass) {
         strcat_realloc(buf, buf_size, buf_allocated, communication_config.mavlink_buf, buf_idx, __FILE__, __LINE__);
     }
+    */
 
     // Move back what is left to the beginning of the buffer
     if (buf_idx<communication_config.mavlink_buf_size) {
@@ -205,7 +209,7 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
 }
 
 unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsigned int *answer_size, unsigned int *answer_allocated) {
-    unsigned short int gotmsg=0, bypass=0;
+    unsigned short int gotmsg=0;
     unsigned int buf_idx=0;
 
     // Put all together
@@ -228,7 +232,7 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
                 case ALIOLI_PROTOCOL_KIND_HEARTBEAT:
                     {
                         HeartBeat heartbeat;
-                        if (protocol_unpack_heartbeat(communication_config.alioli_protocol_msg, &heartbeat)) {
+                        if (protocol_unpack_heartbeat(&communication_config.alioli_protocol_msg, &heartbeat)) {
                             print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "HEARTBEAT: %ld delay", heartbeat.answered-heartbeat.requested);
                         } else {
                             print_debug(CCOMMUNICATION, stderr, CRED, 0, "HEARTBEAT: wrong package");
@@ -239,8 +243,8 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
                 case ALIOLI_PROTOCOL_KIND_STATUS:
                     {
                         ROVStatus rovstatus;
-                        if (protocol_unpack_status(communication_config.alioli_protocol_msg, &rovstatus)) {
-                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "ROVStatus: %ldV - %ldA", rovstatus.voltaje, rovstatus.amperage);
+                        if (protocol_unpack_status(&communication_config.alioli_protocol_msg, &rovstatus)) {
+                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "ROVStatus: %ldV - %ldA", rovstatus.voltage, rovstatus.amperage);
                         } else {
                             print_debug(CCOMMUNICATION, stderr, CRED, 0, "ROVStatus: wrong package");
                         }
@@ -249,7 +253,7 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
 
                 default:
                     //Do nothing
-                    print_debug(CCOMMUNICATION, stdout, CYELLOW, 0, "ALIOLI PROTOCOL Unknown message with KIND %d", communication_config.msg.kind);
+                    print_debug(CCOMMUNICATION, stdout, CYELLOW, 0, "ALIOLI PROTOCOL Unknown message with KIND %d", communication_config.alioli_protocol_msg.kind);
             }
         }
 

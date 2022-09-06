@@ -8,7 +8,7 @@ byte* protocol_pack(AlioliProtocol *package) {
     package->header = ALIOLI_PROTOCOL_MAGIC_HEADER;
 
     // Get memory for the package
-    answer = malloc(sizeof(byte) * (ALIOLI_PROTOCOL_SIZE_BASE + package->payload_size));
+    answer = (byte*) malloc(sizeof(byte) * (ALIOLI_PROTOCOL_SIZE_BASE + package->payload_size));
     if (answer) {
 
         // Header + Kind + Payload Size
@@ -112,7 +112,7 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         if (package->payload_size<=ALIOLI_PROTOCOL_MAX_SIZE) {
 
             // Extra byte is for CRC verification purpose +1 byte for kind on CRC8 calculus
-            package->payload = malloc(sizeof(byte)*package->payload_size+1);
+            package->payload = (byte*) malloc(sizeof(byte)*package->payload_size+1);
 
             // Update status
             status->status++;
