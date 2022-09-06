@@ -755,10 +755,8 @@ void transmission_loop(long int now) {
                 if (buf_size) {
 
                     // Message detected
-#if DEBUG_TRANSMISSION_MSG
-                    print_debug("TRl", stdout, CPURPLE, 0, "MSG with %ld bytes", buf_size);
-#endif
-#if DEBUG_TRANSMISSION_MSG
+#if DEBUG_TRANSMISSION
+                    print_debug("TRl", stdout, CPURPLE, 0, "MODEM->BUOY msg with %ld bytes", buf_size);
                     // print_asbin(buf, buf_size, stderr);
                     print_ashex(buf, buf_size, stderr);
 #endif
@@ -790,6 +788,8 @@ void transmission_loop(long int now) {
                         transmission_config.modem_linked = 0;
                         communication_reset();
 
+/*
+                    // This message is outdated (use onlye with ModemSimul)
                     // HELLO msg
                     } else if (
                         (!bistrcmp(buf, min(buf_size, (unsigned int) 5), "PING", 5))
@@ -805,6 +805,7 @@ void transmission_loop(long int now) {
                         strcat_realloc(&answer, &answer_size, &answer_allocated, "PONG\n", 5, __FILE__, __LINE__);
                         transmission_config.modem_linked = 0;
                         communication_reset();
+*/
 
                     // MAVLINK msg
                     } else if (transmission_config.modem_linked) {
@@ -932,6 +933,13 @@ void transmission_loop(long int now) {
             // If it is a meesage for the ROV
             if (buf_size) {
 
+                // Message detected
+#if DEBUG_TRANSMISSION_MSG
+                print_debug("TRl", stdout, CPURPLE, 0, "BUOY->ROV msg with %ld bytes", buf_size);
+                // print_asbin(buf, buf_size, stderr);
+                print_ashex(buf, buf_size, stderr);
+#endif
+
                 // This is a RS485 action
                 rs485_action = 1;
 
@@ -947,13 +955,15 @@ void transmission_loop(long int now) {
                         // Check if there is a message to process
                         if (buf_size) {
 
-                            // Analize answer from rov
-                            // rov_msg(buf, buf_size, &answer, &answer_size, &answer_allocated);
+                            // Message detected
+#if DEBUG_TRANSMISSION_MSG
+                            print_debug("TRl", stdout, CPURPLE, 0, "ROV->BUOY msg with %ld bytes", buf_size);
+                            // print_asbin(buf, buf_size, stderr);
+                            print_ashex(buf, buf_size, stderr);
+#endif
 
-                            // RS485 data found
-                            print_debug("TRl", stdout, CPURPLE, 0, "RS485:");
-                            // print_asbin(answer, answer_size, stderr);
-                            print_ashex(answer, answer_size, stderr);
+                            // Analize answer from rov
+                            rov_msg(buf, buf_size, &answer, &answer_size, &answer_allocated);
 
                         }
                     }
@@ -967,6 +977,13 @@ void transmission_loop(long int now) {
 
             // SEND answer to BASE
             if (answer_size) {
+
+                // RS485 answer found
+#if DEBUG_TRANSMISSION_MSG
+                print_debug("TRl", stdout, CPURPLE, 0, "BUOY->MODEM msg with %ld bytes", answer_size);
+                // print_asbin(answer, answer_size, stderr);
+                print_ashex(answer, answer_size, stderr);
+#endif
 
                 // Send answer to modem
                 modem_action = 1;

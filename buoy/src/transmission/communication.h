@@ -4,13 +4,19 @@
 #include "lib/constants.h"
 // #include "mavlink/alioli/mavlink.h"
 #include "mavlink/standard/mavlink.h"
+#include "lib/common/protocol.h"
 
 typedef struct TCommunicationConfig {
     char *mavlink_buf;
     unsigned int mavlink_buf_size;
     unsigned int mavlink_buf_allocated;
-    mavlink_status_t status;
-    mavlink_message_t msg;
+    mavlink_status_t mavlink_status;
+    mavlink_message_t mavlink_msg;
+    char *alioli_protocol_buf;
+    unsigned int alioli_protocol_buf_size;
+    unsigned int alioli_protocol_buf_allocated;
+    AlioliProtocol alioli_protocol_package;
+    AlioliProtocolStatus aliolio_protocol_status;
 } CommunicationConfig;
 
 mavlink_system_t mavlink_system = {

@@ -12,7 +12,7 @@
 // Package kind
 #define ALIOLI_PROTOCOL_KIND_HEARTBEAT 1
 #define ALIOLI_PROTOCOL_KIND_STATUS 2
-#define ALIOLI_PROTOCOL_KIND_MOVEMENT 3
+#define ALIOLI_PROTOCOL_KIND_USERREQUEST 3
 
 // Protocol reading status
 #define ALIOLI_PROTOCOL_READING_NODATA 0
@@ -52,6 +52,8 @@ typedef struct TAlioliProtocolStatus {
 // === Basic communication ===
 //
 typedef struct THeartBeat {
+    unsigned long int requested;
+    unsigned long int answered;
 } HeartBeat;
 
 // === ROV Control ===
@@ -111,9 +113,15 @@ typedef struct TROVStatus {
 
 
 // Pack structures to bytes
-byte* protocol_pack_heartbeat();
+byte* protocol_pack_heartbeat(HeartBeat *heartbeat);
 byte* protocol_pack_status(ROVStatus *rovstatus);
 byte* protocol_pack_userrequest(UserRequest *userrequest);
+
+// Unpack structures from Package
+unsigned short int protocol_unpack_heartbeat(AlioliProtocol *package, HeartBeat *heartbeat);
+unsigned short int protocol_unpack_status(AlioliProtocol *package, ROVStatus *rovstatus);
+unsigned short int protocol_unpack_userrequest(AlioliProtocol *package, UserRequest *userrequest);
+
 
 // Parse byte-by-byte an Alioli Package
 unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, AlioliProtocolStatus *status);

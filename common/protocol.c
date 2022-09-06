@@ -14,7 +14,9 @@ byte* protocol_pack(AlioliProtocol *package) {
         // Header + Kind + Payload Size
         memcpy(answer, package, ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_KIND + ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE);
         // Payload
-        memcpy(answer + ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_KIND + ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE, package->payload, package->payload_size);
+        if (package->payload_size) {
+            memcpy(answer + ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_KIND + ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE, package->payload, package->payload_size);
+        }
 
         // Copy 1 byte of kind to the string so it will be calculated together with the CRC8
         memcpy(answer + ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_KIND + ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE + package->payload_size, &(package->kind), 1);
@@ -40,15 +42,14 @@ byte* protocol_new_package(uint8_t kind, uint16_t payload_size, byte *payload) {
     package.crc = 0;
     return protocol_pack(&package);
 }
-byte* protocol_pack_heartbeat() {
-    HeartBeat hb;
-    return protocol_new_package(ALIOLI_PROTOCOL_KIND_HEARTBEAT, sizeof(HeartBeat), (byte*) &hb);
+byte* protocol_pack_heartbeat(HeartBeat *data) {
+    return protocol_new_package(ALIOLI_PROTOCOL_KIND_HEARTBEAT, sizeof(HeartBeat), (byte*) &data);
 }
 byte* protocol_pack_status(ROVStatus *data) {
     return protocol_new_package(ALIOLI_PROTOCOL_KIND_STATUS, sizeof(ROVStatus), (byte*) data);
 }
 byte* protocol_pack_userrequest(UserRequest *data) {
-    return protocol_new_package(ALIOLI_PROTOCOL_KIND_MOVEMENT, sizeof(UserRequest), (byte*) data);
+    return protocol_new_package(ALIOLI_PROTOCOL_KIND_USERREQUEST, sizeof(UserRequest), (byte*) data);
 }
 
 
@@ -110,13 +111,8 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         // Verify
         if (package->payload_size<=ALIOLI_PROTOCOL_MAX_SIZE) {
 
-            // Get memory
-            if (package->payload_size>0) {
-                // Extra byte is for CRC verification purpose
-                package->payload = malloc(sizeof(byte)*package->payload_size+1);
-            } else {
-                package->payload = NULL;
-            }
+            // Extra byte is for CRC verification purpose +1 byte for kind on CRC8 calculus
+            package->payload = malloc(sizeof(byte)*package->payload_size+1);
 
             // Update status
             status->status++;
@@ -197,24 +193,47 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
 }
 
 // Pack structures to bytes
-byte* protocol_new_package(uint8_t kind, uint16_t payload_size, byte *payload) {
-    AlioliProtocol package;
-    package.header = ALIOLI_PROTOCOL_MAGIC_HEADER;
-    package.kind = kind;
-    package.payload_size = payload_size;
-    package.payload = payload;
-    package.crc = 0;
-    return protocol_pack(&package);
+unsigned short int protocol_unpack(AlioliProtocol *package, byte *data, uint8_t kind) {
+    uint16_t size=0;
+    if (package->kind==kind) {
+        if (
+                  (package->kind == ALIOLI_PROTOCOL_KIND_HEARTBEAT)
+               && (package->payload_size==sizeof(HeartBeat))
+            )  {
+            size = sizeof(HeartBeat);
+        } else if (
+                  (package->kind == ALIOLI_PROTOCOL_KIND_STATUS)
+               && (package->payload_size==sizeof(ROVStatus))
+            ) {
+            size = sizeof(ROVStatus);
+        } else if (
+                  (package->kind == ALIOLI_PROTOCOL_KIND_USERREQUEST)
+               && (package->payload_size==sizeof(UserRequest))
+            ) {
+            size = sizeof(UserRequest);
+        } else {
+            // Programming error, missing kind here!
+            return 0;
+        }
+
+        // Dump payload on object
+        if (size) {
+            memcpy(data, package->payload, package->payload_size);
+        }
+        return 1;
+    } else {
+        // Different kind of package
+        return 0;
+    }
 }
-unsigned short int protocol_unpack_heartbeat(AlioliProtocol *package, HeartBeat *hb) {
-    HeartBeat hb;
-    return protocol_new_package(ALIOLI_PROTOCOL_KIND_HEARTBEAT, sizeof(HeartBeat), (byte*) &hb);
+unsigned short int protocol_unpack_heartbeat(AlioliProtocol *package, HeartBeat *data) {
+    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_HEARTBEAT);
 }
-byte* protocol_unpack_status(ROVStatus *data) {
-    return protocol_new_package(ALIOLI_PROTOCOL_KIND_STATUS, sizeof(ROVStatus), (byte*) data);
+unsigned short int protocol_unpack_status(AlioliProtocol *package, ROVStatus *data) {
+    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_STATUS);
 }
-byte* protocol_unpack_userrequest(UserRequest *data) {
-    return protocol_new_package(ALIOLI_PROTOCOL_KIND_MOVEMENT, sizeof(UserRequest), (byte*) data);
+unsigned short int protocol_unpack_userrequest(AlioliProtocol *package, UserRequest *data) {
+    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_USERREQUEST);
 }
 
 

@@ -7,7 +7,10 @@
 #define COLOR_MAX_BUFFER 2048
 #define PRINT_DEBUG_OVERFLOW_STRING " [...]"
 #define ALIOLI_PRINT_AS_TEMP_LEN 50
-#define uint8_t byte
+
+#ifndef byte
+#define byte uint8_t
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
