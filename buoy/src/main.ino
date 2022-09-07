@@ -118,6 +118,8 @@ void setup() {
 
     // Setup main object
     // =================
+    protocol_setup_environment(&buoy.environment);
+    protocol_setup_userrequest(&buoy.userrequest);
     // GPS
     buoy.gps.latitude = 0.0;
     buoy.gps.longitude = 0.0;
@@ -125,9 +127,9 @@ void setup() {
     buoy.gps.speed = 0.0;
     buoy.gps.course = 0.0;
     buoy.gps.epoch = 0;
-    buoy.gps.newdata = 0;
+    buoy.gps_newdata = 0;
     // Acelerometer (DUMMY)
-    buoy.acel.newdata = 1;
+    buoy.acelerometer_newdata = 1;
 
     // Setup Internal LED
     digitalWrite(LED_BUILTIN, LOW);

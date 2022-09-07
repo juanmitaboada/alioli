@@ -519,7 +519,7 @@ unsigned short int modem_gps(char **buf, size_t *buf_size, size_t *buf_allocated
         // Convert positions to decimal degrees (N=+ S=- E=+ W=-) - [ len("+CGPSINFO: ")==11 ]
         tokens = bstr_split((*buf)+11, (*buf_size)-11, ',', (char*) __FILE__, __LINE__);
         if (tokens) {
-            buoy.gps.newdata = 1;
+            buoy.gps_newdata = 1;
             for (i=0; *(tokens+i); i++) {
                 token = *(tokens+i);
                 if (i==0) {

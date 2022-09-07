@@ -89,10 +89,11 @@ void gyroscope_setup(long int now) {
 
     // Set environment
     rov.environment.temperaturegy = 0.0;
-    rov.pos.Tmp = 0.0;
-    rov.pos.angx = 0.0;
-    rov.pos.angy = 0.0;
-    rov.pos.angz = 0.0;
+    rov.environment.acelerometer.Tmp = 0.0;
+    rov.environment.acelerometer.angx = 0.0;
+    rov.environment.acelerometer.angy = 0.0;
+    rov.environment.acelerometer.angz = 0.0;
+    rov.environment_updated = 1;
 
     print_debug(GS, stdout, CPURPLE, 0, "DONE");
 }
@@ -103,8 +104,8 @@ float pitch = 0;
 float roll = 0;
 float yaw = 0;
 void gyroscope_loop(long int now) {
-    float timeStep = 0.01;
 #ifdef GYROSCOPE_MPU
+    float timeStep = 0.01;
     Vector norm;
 #endif
     sensors_event_t event; 

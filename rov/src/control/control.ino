@@ -23,14 +23,6 @@ void control_setup(long int now) {
     // Set other controls
     buoyancy_setup(now);
 
-    // Set environment
-    rov.user.x = 0.0;
-    rov.user.y = 0.0;
-    rov.user.z = 0.0;
-    rov.user.dir = 0.0;
-    rov.user.acel = 0.0;
-    rov.user.lastrequest = now;
-
 #if DEBUG_CONTROL
     print_debug(CS, stdout, "purple", COLOR_NORMAL, "DONE");
 #endif

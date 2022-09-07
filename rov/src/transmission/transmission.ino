@@ -25,7 +25,7 @@ unsigned short int rs485_sendmsg(char *buf, size_t buf_size) {
 
 void transmission_setup(long int now) {
 #if DEBUG_TRANSMISSION
-    print_debug("TRANSMISSION-SETUP", stdout, "purple", COLOR_NOTAIL, "INI -> ");
+    print_debug("TRANSMISSION-SETUP", stdout, CPURPLE, COLOR_NOTAIL, "INI -> ");
 #endif
 
     // Setup serial ports
@@ -37,7 +37,7 @@ void transmission_setup(long int now) {
 
 #if DEBUG_TRANSMISSION
     // Show we are done
-    print_debug("TRANSMISSION-SETUP", stdout, "green", COLOR_NOHEAD, "DONE");
+    print_debug("TRANSMISSION-SETUP", stdout, CGREEN, COLOR_NOHEAD, "DONE");
 #endif
 }
 

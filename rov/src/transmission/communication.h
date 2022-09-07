@@ -2,11 +2,14 @@
 #define COMMUNICATION_H
 
 #include "lib/constants.h"
+#include "lib/common/protocol.h"
 
 typedef struct TCommunicationConfig {
-    char *mavlink_buf;
-    unsigned int mavlink_buf_size;
-    unsigned int mavlink_buf_allocated;
+    char *alioli_protocol_buf;
+    unsigned int alioli_protocol_buf_size;
+    unsigned int alioli_protocol_buf_allocated;
+    AlioliProtocol alioli_protocol_msg;
+    AlioliProtocolStatus alioli_protocol_status;
 } CommunicationConfig;
 
 

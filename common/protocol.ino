@@ -45,11 +45,90 @@ byte* protocol_new_package(uint8_t kind, uint16_t payload_size, byte *payload) {
 byte* protocol_pack_heartbeat(HeartBeat *data) {
     return protocol_new_package(ALIOLI_PROTOCOL_KIND_HEARTBEAT, sizeof(HeartBeat), (byte*) &data);
 }
-byte* protocol_pack_status(ROVStatus *data) {
-    return protocol_new_package(ALIOLI_PROTOCOL_KIND_STATUS, sizeof(ROVStatus), (byte*) data);
+byte* protocol_pack_environment(Environment *data) {
+    return protocol_new_package(ALIOLI_PROTOCOL_KIND_ENVIRONMENT, sizeof(Environment), (byte*) data);
 }
 byte* protocol_pack_userrequest(UserRequest *data) {
     return protocol_new_package(ALIOLI_PROTOCOL_KIND_USERREQUEST, sizeof(UserRequest), (byte*) data);
+}
+
+
+// Pack structures to bytes
+unsigned short int protocol_unpack(AlioliProtocol *package, byte *data, uint8_t kind) {
+    uint16_t size=0;
+    if (package->kind==kind) {
+        if (
+                  (package->kind == ALIOLI_PROTOCOL_KIND_HEARTBEAT)
+               && (package->payload_size==sizeof(HeartBeat))
+            )  {
+            size = sizeof(HeartBeat);
+        } else if (
+                  (package->kind == ALIOLI_PROTOCOL_KIND_ENVIRONMENT)
+               && (package->payload_size==sizeof(Environment))
+            ) {
+            size = sizeof(Environment);
+        } else if (
+                  (package->kind == ALIOLI_PROTOCOL_KIND_USERREQUEST)
+               && (package->payload_size==sizeof(UserRequest))
+            ) {
+            size = sizeof(UserRequest);
+        } else {
+            // Programming error, missing kind here!
+            return 0;
+        }
+
+        // Dump payload on object
+        if (size) {
+            memcpy(data, package->payload, package->payload_size);
+        }
+        return 1;
+    } else {
+        // Different kind of package
+        return 0;
+    }
+}
+unsigned short int protocol_unpack_heartbeat(AlioliProtocol *package, HeartBeat *data) {
+    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_HEARTBEAT);
+}
+unsigned short int protocol_unpack_environment(AlioliProtocol *package, Environment *data) {
+    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_ENVIRONMENT);
+}
+unsigned short int protocol_unpack_userrequest(AlioliProtocol *package, UserRequest *data) {
+    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_USERREQUEST);
+}
+
+// Setup functions
+void protocol_setup_environment(Environment *environment) {
+    environment->altitude=0.0;
+    environment->pressure=0.0;
+    environment->temperaturegy=0.0;
+    environment->temperature1=0.0;
+    environment->temperature2=0.0;
+    environment->temperaturebmp=0.0;
+    environment->voltage=0.0;
+    environment->amperage=0.0;
+    environment->acelerometer.Tmp=0;
+    environment->acelerometer.angx=0;
+    environment->acelerometer.angy=0;
+    environment->acelerometer.angz=0;
+    environment->analisys.ph=0;
+    environment->analisys.ph_temp=0;
+    environment->analisys.orp=0;
+    environment->analisys.orp_temp=0;
+    environment->analisys.conductivity=0;
+    environment->analisys.turbidity=0;
+}
+
+void protocol_setup_userrequest(UserRequest *userrequest) {
+    userrequest->x = 0;
+    userrequest->y = 0;
+    userrequest->z = 0;
+    userrequest->r = 0;
+    userrequest->buttons1 = 0;
+    userrequest->buttons2 = 0;
+    userrequest->extension = 0;
+    userrequest->pitch = 0;
+    userrequest->roll = 0;
 }
 
 
@@ -191,49 +270,4 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
     // Return if we finished a package
     return (status->status==ALIOLI_PROTOCOL_READING_DONE);
 }
-
-// Pack structures to bytes
-unsigned short int protocol_unpack(AlioliProtocol *package, byte *data, uint8_t kind) {
-    uint16_t size=0;
-    if (package->kind==kind) {
-        if (
-                  (package->kind == ALIOLI_PROTOCOL_KIND_HEARTBEAT)
-               && (package->payload_size==sizeof(HeartBeat))
-            )  {
-            size = sizeof(HeartBeat);
-        } else if (
-                  (package->kind == ALIOLI_PROTOCOL_KIND_STATUS)
-               && (package->payload_size==sizeof(ROVStatus))
-            ) {
-            size = sizeof(ROVStatus);
-        } else if (
-                  (package->kind == ALIOLI_PROTOCOL_KIND_USERREQUEST)
-               && (package->payload_size==sizeof(UserRequest))
-            ) {
-            size = sizeof(UserRequest);
-        } else {
-            // Programming error, missing kind here!
-            return 0;
-        }
-
-        // Dump payload on object
-        if (size) {
-            memcpy(data, package->payload, package->payload_size);
-        }
-        return 1;
-    } else {
-        // Different kind of package
-        return 0;
-    }
-}
-unsigned short int protocol_unpack_heartbeat(AlioliProtocol *package, HeartBeat *data) {
-    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_HEARTBEAT);
-}
-unsigned short int protocol_unpack_status(AlioliProtocol *package, ROVStatus *data) {
-    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_STATUS);
-}
-unsigned short int protocol_unpack_userrequest(AlioliProtocol *package, UserRequest *data) {
-    return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_USERREQUEST);
-}
-
 

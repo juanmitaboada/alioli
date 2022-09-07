@@ -27,6 +27,7 @@
 #include "lib/shared.h"
 #include "lib/common/alioli.ino"
 #include "lib/common/serial.ino"
+#include "lib/common/protocol.ino"
 #include "control/control.ino"
 #include "sensors/sensors.ino"
 #include "sensors/analisys.ino"
@@ -128,6 +129,11 @@ void setup() {
     lights_dance(now);
 
     print_debug("SETUP", stdout, CGREEN, COLOR_NORMAL, "Ready");
+
+    // Setup main object
+    // =================
+    protocol_setup_environment(&rov.environment);
+    protocol_setup_userrequest(&rov.userrequest);
 
     // Setup Internal LED
     digitalWrite(LED_BUILTIN, LOW);
