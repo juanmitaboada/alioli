@@ -39,7 +39,6 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                 case ALIOLI_PROTOCOL_KIND_HEARTBEAT:
                     {
                         HeartBeat heartbeat;
-                        char *msg=NULL;
 
                         // Unpack
                         if (protocol_unpack_heartbeat(&communication_config.alioli_protocol_msg, &heartbeat)) {
@@ -49,22 +48,17 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                             heartbeat.answered = get_current_time();
 
                             // Attach answer
-                            msg = (char*) protocol_pack_heartbeat(&heartbeat);
-                            if (msg) {
-                                strcat_realloc(answer, answer_size, answer_allocated, msg, ALIOLI_PROTOCOL_SIZE_HEARTBEAT, __FILE__, __LINE__);
-                                free(msg);
-                                msg = NULL;
-                            }
+                            protocol_pack_heartbeat(&heartbeat, communication_config.alioli_protocol_msg.counter, answer, answer_size, answer_allocated);
 
                             // Check if environment was updated
                             if (rov.environment_updated) {
 
                                 // Attach our environment
-                                msg = (char*) protocol_pack_environment(&(rov.environment));
-                                if (msg) {
-                                    strcat_realloc(answer, answer_size, answer_allocated, msg, ALIOLI_PROTOCOL_SIZE_ENVIRONMENT, __FILE__, __LINE__);
-                                    free(msg);
-                                    msg = NULL;
+                                protocol_pack_environment(&(rov.environment), protocol_counter, answer, answer_size, answer_allocated);
+                                if (protocol_counter==255) {
+                                    protocol_counter = 1;
+                                } else {
+                                    protocol_counter++;
                                 }
 
                             }

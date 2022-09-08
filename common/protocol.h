@@ -38,7 +38,6 @@
 
 #define ALIOLI_PROTOCOL_MAX_SIZE 512
 
-
 // === General protocol fields ===
 
 typedef struct TAlioliProtocol {
@@ -138,6 +137,13 @@ void protocol_print_heartbeat(HeartBeat *heartbeat);
 void protocol_print_environment(Environment *environment);
 void protocol_print_userrequest(UserRequest *userrequest);
 #endif
+
+// Pack package to string
+unsigned short int protocol_pack(AlioliProtocol *package, char **answer, size_t *answer_size, size_t *answer_allocated);
+unsigned short int protocol_new_package(uint8_t counter, uint8_t kind, uint16_t payload_size, byte *payload, char **answer, size_t *answer_size, size_t *answer_allocated);
+unsigned short int protocol_pack_heartbeat(HeartBeat *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated);
+unsigned short int protocol_pack_environment(Environment *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated);
+unsigned short int protocol_pack_userrequest(UserRequest *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated);
 
 // Unpack structures from Package
 unsigned short int protocol_unpack_heartbeat(AlioliProtocol *package, HeartBeat *heartbeat);

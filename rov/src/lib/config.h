@@ -6,6 +6,7 @@
 #define RTC 1
 
 // Debugger
+#define ALIOLI_ASSERTS 1
 #define DEBUG_NO
 #define DEBUG_MAIN 0
 #define DEBUG_CONTROL 0

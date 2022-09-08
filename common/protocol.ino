@@ -1,9 +1,9 @@
 #include "protocol.h"
 
-uint8_t protocol_counter=0;
+static uint8_t protocol_counter=1;
+const char *CPROTOCOL="PROTOCOL";
 
 #if ALIOLI_PROTOCOL_DEBUG
-const char *CPROTOCOL="PROTOCOL";
 const char * protocol_package_kind(uint8_t kind) {
     if (kind == ALIOLI_PROTOCOL_KIND_HEARTBEAT) {
         return "Heartbeat";
@@ -83,48 +83,72 @@ void protocol_package_print(AlioliProtocol *package) {
 #endif
 
 // Pack an Alioli Package to be sent
-byte* protocol_pack(AlioliProtocol *package) {
-    byte *answer = NULL;
+unsigned short int protocol_pack(AlioliProtocol *package, char **answer, size_t *answer_size, size_t *answer_allocated) {
+    size_t temp_answer_size=0, until_payload=0, expected=*answer_size + package->payload_size + ALIOLI_PROTOCOL_SIZE_BASE;
 
     // Make sure it includes Alioli Protocol Header
     package->header = ALIOLI_PROTOCOL_MAGIC_HEADER;
 
-    // Get memory for the package
-    answer = (byte*) malloc(sizeof(byte) * (ALIOLI_PROTOCOL_SIZE_BASE + package->payload_size));
-    if (answer) {
+    // Get memory for the package (+1 byte for counter+kind-crc)
+    strcat_prealloc(answer, answer_allocated, *answer_size + ALIOLI_PROTOCOL_SIZE_BASE + package->payload_size + 1, __FILE__, __LINE__);
+    if (*answer) {
 
         // Header + Kind + Payload Size
-        memcpy(answer, &(package->header), ALIOLI_PROTOCOL_SIZE_HEADER);
-        memcpy(answer+ALIOLI_PROTOCOL_SIZE_HEADER, &(package->counter), ALIOLI_PROTOCOL_SIZE_COUNTER);
-        memcpy(answer+ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_COUNTER, &(package->kind), ALIOLI_PROTOCOL_SIZE_KIND);
-        memcpy(answer+ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_COUNTER + ALIOLI_PROTOCOL_SIZE_KIND, &(package->payload_size), ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE);
+        print_ashex(*answer, *answer_size, stdout);
+        strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->header), ALIOLI_PROTOCOL_SIZE_HEADER, __FILE__, __LINE__);
+        print_ashex(*answer, *answer_size, stdout);
+        strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->counter), ALIOLI_PROTOCOL_SIZE_COUNTER, __FILE__, __LINE__);
+        print_ashex(*answer, *answer_size, stdout);
+        strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->kind), ALIOLI_PROTOCOL_SIZE_KIND, __FILE__, __LINE__);
+        print_ashex(*answer, *answer_size, stdout);
+        strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->payload_size), ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE, __FILE__, __LINE__);
+        print_ashex(*answer, *answer_size, stdout);
         // Payload
+        until_payload = *answer_size;
         if (package->payload_size) {
-            memcpy(answer + ALIOLI_PROTOCOL_SIZE_PREBASE, package->payload, package->payload_size);
+            strcat_realloc(answer, answer_size, answer_allocated, (char*) package->payload, package->payload_size, __FILE__, __LINE__);
+            print_ashex(*answer, *answer_size, stdout);
         }
+        temp_answer_size = *answer_size;
 
-        // Copy 1 byte of kind to the string so it will be calculated together with the CRC8
-        memcpy(answer + ALIOLI_PROTOCOL_SIZE_PREBASE + package->payload_size, &(package->kind), 1);
+        // Copy 2 bytes of counter+kind to the string so it will be calculated together with the CRC8
+        strcat_realloc(answer, &temp_answer_size, answer_allocated, (char*) &(package->counter), 1, __FILE__, __LINE__);
+        strcat_realloc(answer, &temp_answer_size, answer_allocated, (char*) &(package->kind), 1, __FILE__, __LINE__);
 
         // Calculate CRC
-        print_debug("PACK", stdout, CPURPLE, 0, "CRC8");
-        print_ashex((char*)answer+ALIOLI_PROTOCOL_SIZE_PREBASE, package->payload_size + 1, stdout);
-        package->crc = CRC8((const byte *) (answer+ALIOLI_PROTOCOL_SIZE_PREBASE), package->payload_size + 1);
+        print_ashex(*answer, temp_answer_size, stdout);
+        print_debug("PACK", stdout, CPURPLE, 0, "PACK-CRC8 - Counter: %u - Payload: %u", package->counter, package->payload_size);
+        print_ashex(*answer, temp_answer_size, stdout);
+        print_ashex(*answer + until_payload, temp_answer_size-until_payload, stdout);
+        package->crc = CRC8((byte*) (*answer + until_payload), temp_answer_size-until_payload);
 
         // CRC (overwrite the last bytes from the string)
-        memcpy(answer + ALIOLI_PROTOCOL_SIZE_PREBASE + package->payload_size, &(package->crc), ALIOLI_PROTOCOL_SIZE_CRC);
+        strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->crc), ALIOLI_PROTOCOL_SIZE_CRC, __FILE__, __LINE__);
+
+#if ALIOLI_ASSERTS
+        // Assertion
+        if (*answer_size!=expected) {
+            // Stuck here, this is a programming error and never should happen
+            while (1) {
+                print_debug("PACK", stderr, CRED, 0, "PACK: Programming error: answer_size:%u!=%u:expected", *answer_size, ALIOLI_PROTOCOL_SIZE_BASE+package->payload_size);
+                print_ashex((const char *) *answer, *answer_size, stdout);
+                delay(5000);
+            }
+        }
+#endif
+
     }
 
-    print_debug("PACK", stdout, CBLUE, 0, "PACK: Kind: %u - Payload: %u", package->kind, package->payload_size);
-    print_ashex((const char*) answer, ALIOLI_PROTOCOL_SIZE_BASE + package->payload_size, stdout);
+    print_debug("PACK", stdout, CBLUE, 0, "PACK: Counter: %u - Kind: %u - Payload: %u", package->counter, package->kind, package->payload_size);
+    print_ashex((const char*) *answer, *answer_size, stdout);
     // protocol_package_print(package);
 
-    return answer;
+    return 1;
 }
 
 
 // Pack structures to bytes
-byte* protocol_new_package(uint8_t counter, uint8_t kind, uint16_t payload_size, byte *payload) {
+unsigned short int protocol_new_package(uint8_t counter, uint8_t kind, uint16_t payload_size, byte *payload, char **answer, size_t *answer_size, size_t *answer_allocated) {
     AlioliProtocol package;
     package.header = ALIOLI_PROTOCOL_MAGIC_HEADER;
     package.counter = counter;
@@ -132,50 +156,53 @@ byte* protocol_new_package(uint8_t counter, uint8_t kind, uint16_t payload_size,
     package.payload_size = payload_size;
     package.payload = payload;
     package.crc = 0;
-    return protocol_pack(&package);
+    return protocol_pack(&package, answer, answer_size, answer_allocated);
 }
-byte* protocol_pack_heartbeat(HeartBeat *data, uint8_t counter) {
-    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_HEARTBEAT, sizeof(HeartBeat), (byte*) &data);
+unsigned short int protocol_pack_heartbeat(HeartBeat *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated) {
+    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_HEARTBEAT, sizeof(HeartBeat), (byte*) &data, answer, answer_size, answer_allocated);
 }
-byte* protocol_pack_environment(Environment *data, uint8_t counter) {
-    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_ENVIRONMENT, sizeof(Environment), (byte*) data);
+unsigned short int protocol_pack_environment(Environment *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated) {
+    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_ENVIRONMENT, sizeof(Environment), (byte*) data, answer, answer_size, answer_allocated);
 }
-byte* protocol_pack_userrequest(UserRequest *data, uint8_t counter) {
-    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_USERREQUEST, sizeof(UserRequest), (byte*) data);
+unsigned short int protocol_pack_userrequest(UserRequest *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated) {
+    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_USERREQUEST, sizeof(UserRequest), (byte*) data, answer, answer_size, answer_allocated);
 }
 
 
 // Pack structures to bytes
 unsigned short int protocol_unpack(AlioliProtocol *package, byte *data, uint8_t kind) {
-    uint16_t size=0;
+    uint16_t dsize=0;
     if (package->kind==kind) {
         if (
                   (package->kind == ALIOLI_PROTOCOL_KIND_HEARTBEAT)
-               && (package->payload_size==sizeof(HeartBeat))
             )  {
-            size = sizeof(HeartBeat);
+            dsize = sizeof(HeartBeat);
         } else if (
                   (package->kind == ALIOLI_PROTOCOL_KIND_ENVIRONMENT)
-               && (package->payload_size==sizeof(Environment))
             ) {
-            size = sizeof(Environment);
+            dsize = sizeof(Environment);
         } else if (
                   (package->kind == ALIOLI_PROTOCOL_KIND_USERREQUEST)
-               && (package->payload_size==sizeof(UserRequest))
             ) {
-            size = sizeof(UserRequest);
+            dsize = sizeof(UserRequest);
         } else {
             // Programming error, missing kind here!
             return 0;
         }
 
         // Dump payload on object
-        if (size) {
-            memcpy(data, package->payload, package->payload_size);
+        if (package->payload_size==dsize) {
+            if (dsize) {
+                memcpy(data, package->payload, package->payload_size);
+            }
+            return 1;
+        } else {
+            print_debug(CPROTOCOL, stderr, CRED, 0, "Payload Size:%u != %u:size - Kind was: %u", package->payload_size, dsize, kind);
+            return 0;
         }
-        return 1;
     } else {
         // Different kind of package
+        print_debug(CPROTOCOL, stderr, CRED, 0, "Package Kind: %u!=%u Function Kind", package->kind, kind);
         return 0;
     }
 }
@@ -272,6 +299,7 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
 
         // Copy data
         memcpy((&(package->counter)), &element, 1);
+        print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Counter: %u", package->counter);
         status->total++;
 
         // Update status
@@ -306,7 +334,7 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         if (package->payload_size<=ALIOLI_PROTOCOL_MAX_SIZE) {
 
             // Extra byte is for CRC verification purpose +1 byte for kind on CRC8 calculus
-            package->payload = (byte*) calloc(package->payload_size+1, sizeof(byte));
+            package->payload = (byte*) calloc(package->payload_size+2, sizeof(byte));
             print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Payload: %u", package->payload_size);
 
             // Update status
@@ -326,8 +354,6 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         status->total++;
         print_ashex((char*) package->payload, status->total-ALIOLI_PROTOCOL_READING_PAYLOAD, stdout);
 
-        print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Total: %u - Payload: %u", status->total, package->payload_size);
-
         // Update status if we got all expected bytes
         if (((status->total)-ALIOLI_PROTOCOL_READING_PAYLOAD) == (package->payload_size)) {
             status->status++;
@@ -339,13 +365,15 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         memcpy(&(package->crc), &element, 1);
         status->total++;
 
-        // Copy kind to the end of the string
-        memcpy(package->payload+package->payload_size, &(package->kind), 1);
+        // Copy counter + kind to the end of the string
+        memcpy(package->payload + package->payload_size, &(package->counter), 1);
+        memcpy(package->payload + package->payload_size + 1, &(package->kind), 1);
 
         // Create CRC
-        print_debug("PARSE_CHAR", stdout, CPURPLE, 0, "CRC8");
-        print_ashex((char*) package->payload, package->payload_size+1, stdout);
-        crc = CRC8((const byte *) package->payload, package->payload_size+1);
+        print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Total: %u - Payload: %u", status->total, package->payload_size);
+        print_debug("PARSE_CHAR", stdout, CPURPLE, 0, "PARSE-CRC8 - Counter: %u - Payload: %u", package->counter, package->payload_size);
+        print_ashex((char*) package->payload, package->payload_size+2, stdout);
+        crc = CRC8((const byte *) package->payload, package->payload_size+2);
 
         // Verify CRC
         if (crc==package->crc) {

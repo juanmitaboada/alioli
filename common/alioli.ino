@@ -84,12 +84,15 @@ unsigned short int strcat_prealloc(char **target, size_t *allocated, size_t toal
     char *temprealloc=NULL;
     unsigned short int error=0;
 
-    if (allocated) {
+    if (allocated && (toallocate>*allocated)) {
+        // Calculate how much more memory we are requested to allocate
+        toallocate = toallocate - *allocated;
+        // Reallocate the memory block
         temprealloc = (char*) realloc(*target, sizeof(char) * ((*allocated)+toallocate));
         if (temprealloc) {
             // Reasign memory
             *target = temprealloc;
-            // Update allocated
+            // Update allocated memory
             (*allocated) += toallocate;
         } else {
             // No memory available

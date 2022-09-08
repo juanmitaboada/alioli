@@ -26,6 +26,7 @@ void sensors_setup(long int now) {
 // === LOOP === ===========================================================
 
 void sensors_loop(long int now) {
+    /*
 #if DEBUG_SENSORS
     print_debug(SENSORS_LOOP, stdout, CPURPLE, COLOR_NORMAL, "Gyroscope");
 #endif
@@ -54,4 +55,5 @@ void sensors_loop(long int now) {
 #if DEBUG_SENSORS
     print_debug(SENSORS_LOOP, stdout, CYELLOW, COLOR_NORMAL, "loop end!");
 #endif
+    */
 }

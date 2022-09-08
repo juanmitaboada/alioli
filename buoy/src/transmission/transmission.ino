@@ -3,6 +3,7 @@
 #include "lib/version.h"
 #include "lib/common/alioli.h"
 #include "lib/common/serial.h"
+#include "lib/common/protocol.h"
 
 #include "transmission.h"
 #include "communication.h"
@@ -228,7 +229,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "RESET");
 #endif
-        error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 2000);
+        error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
     }
 
     // Remove ECHO
@@ -717,7 +718,7 @@ void transmission_setup(long int now) {
 }
 
 void transmission_loop(long int now) {
-    char *buf=NULL, *answer=NULL, *msg = NULL;
+    char *buf=NULL, *answer=NULL;
     unsigned int buf_size=0, buf_allocated=0, answer_size=0, answer_allocated=0;
     unsigned short int modem_error=0, modem_action=0, rs485_error=0, rs485_action=0;
     HeartBeat heartbeat;
@@ -960,10 +961,11 @@ void transmission_loop(long int now) {
                 heartbeat.answered = 0;
 
                 // Pack
-                msg = (char*) protocol_pack_heartbeat(&heartbeat);
-                if (msg) {
-                    strcat_realloc(&buf, &buf_size, &buf_allocated, msg, ALIOLI_PROTOCOL_SIZE_HEARTBEAT, __FILE__, __LINE__);
-                    free(msg);
+                protocol_pack_heartbeat(&heartbeat, protocol_counter, &buf, &buf_size, &buf_allocated);
+                if (protocol_counter==255) {
+                    protocol_counter = 1;
+                } else {
+                    protocol_counter++;
                 }
             }
 
