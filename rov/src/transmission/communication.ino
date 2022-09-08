@@ -8,13 +8,17 @@ void communication_setup() {
     communication_config.alioli_protocol_buf = NULL;
     communication_config.alioli_protocol_buf_size = 0;
     communication_config.alioli_protocol_buf_allocated = 0;
+    protocol_setup_package(&communication_config.alioli_protocol_msg);
+    protocol_setup_status(&communication_config.alioli_protocol_status);
 }
 
 void communication_reset() {
     communication_config.alioli_protocol_buf_size = 0;
+    protocol_setup_package(&communication_config.alioli_protocol_msg);
+    protocol_setup_status(&communication_config.alioli_protocol_status);
 }
 
-unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *buf_allocated, char **answer, unsigned int *answer_size, unsigned int *answer_allocated) {
+unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *buf_allocated, char **answer, unsigned int *answer_size, unsigned int *answer_allocated, long int now) {
     unsigned short int gotmsg=0;
     unsigned int buf_idx=0;
 
@@ -22,7 +26,6 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
     if (*buf_size) {
         strcat_realloc(&communication_config.alioli_protocol_buf, &communication_config.alioli_protocol_buf_size, &communication_config.alioli_protocol_buf_allocated, *buf, *buf_size, __FILE__, __LINE__);
     }
-    // print_ashex(communication_config.alioli_protocol_buf, communication_config.alioli_protocol_buf_size, stderr);
 
     // While data in the buffer and not alioli_protocol message detected, keep reading
     yield();
@@ -30,10 +33,8 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
 
         // Parse alioli_protocol mg
         if (protocol_parse_char((byte) communication_config.alioli_protocol_buf[buf_idx], &(communication_config.alioli_protocol_msg), &(communication_config.alioli_protocol_status))) {
-
             // Say we got a alioli_protocol message
             gotmsg=1;
-
             switch(communication_config.alioli_protocol_msg.kind) {
                 case ALIOLI_PROTOCOL_KIND_HEARTBEAT:
                     {
@@ -45,13 +46,14 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                             print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "HEARTBEAT: %ld delay", heartbeat.answered-heartbeat.requested);
 
                             // Set our timestamp
-                            heartbeat.answered = get_current_time_with_ms();
+                            heartbeat.answered = get_current_time();
 
                             // Attach answer
                             msg = (char*) protocol_pack_heartbeat(&heartbeat);
                             if (msg) {
                                 strcat_realloc(answer, answer_size, answer_allocated, msg, ALIOLI_PROTOCOL_SIZE_HEARTBEAT, __FILE__, __LINE__);
                                 free(msg);
+                                msg = NULL;
                             }
 
                             // Check if environment was updated
@@ -62,6 +64,7 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                                 if (msg) {
                                     strcat_realloc(answer, answer_size, answer_allocated, msg, ALIOLI_PROTOCOL_SIZE_ENVIRONMENT, __FILE__, __LINE__);
                                     free(msg);
+                                    msg = NULL;
                                 }
 
                             }

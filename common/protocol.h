@@ -17,19 +17,21 @@
 // Protocol reading status
 #define ALIOLI_PROTOCOL_READING_NODATA 0
 #define ALIOLI_PROTOCOL_READING_HEADER_2 1
-#define ALIOLI_PROTOCOL_READING_KIND 2
-#define ALIOLI_PROTOCOL_READING_PAYLOAD_SIZE_1 3
-#define ALIOLI_PROTOCOL_READING_PAYLOAD_SIZE_2 4
-#define ALIOLI_PROTOCOL_READING_PAYLOAD 5
-#define ALIOLI_PROTOCOL_READING_CRC 6
-#define ALIOLI_PROTOCOL_READING_DONE 7
+#define ALIOLI_PROTOCOL_READING_COUNTER 2
+#define ALIOLI_PROTOCOL_READING_KIND 3
+#define ALIOLI_PROTOCOL_READING_PAYLOAD_SIZE_1 4
+#define ALIOLI_PROTOCOL_READING_PAYLOAD_SIZE_2 5
+#define ALIOLI_PROTOCOL_READING_PAYLOAD 6
+#define ALIOLI_PROTOCOL_READING_CRC 7
 
 // All fields except payload which is dynamic
 #define ALIOLI_PROTOCOL_SIZE_HEADER FIELD_SIZEOF(AlioliProtocol, header)
+#define ALIOLI_PROTOCOL_SIZE_COUNTER FIELD_SIZEOF(AlioliProtocol, counter)
 #define ALIOLI_PROTOCOL_SIZE_KIND FIELD_SIZEOF(AlioliProtocol, kind)
 #define ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE FIELD_SIZEOF(AlioliProtocol, payload_size)
 #define ALIOLI_PROTOCOL_SIZE_CRC FIELD_SIZEOF(AlioliProtocol, crc)
-#define ALIOLI_PROTOCOL_SIZE_BASE ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_KIND + ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE + ALIOLI_PROTOCOL_SIZE_CRC
+#define ALIOLI_PROTOCOL_SIZE_PREBASE ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_COUNTER + ALIOLI_PROTOCOL_SIZE_KIND + ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE
+#define ALIOLI_PROTOCOL_SIZE_BASE ALIOLI_PROTOCOL_SIZE_HEADER + ALIOLI_PROTOCOL_SIZE_COUNTER + ALIOLI_PROTOCOL_SIZE_KIND + ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE + ALIOLI_PROTOCOL_SIZE_CRC
 #define ALIOLI_PROTOCOL_SIZE_HEARTBEAT ALIOLI_PROTOCOL_SIZE_BASE + sizeof(HeartBeat)
 #define ALIOLI_PROTOCOL_SIZE_ENVIRONMENT ALIOLI_PROTOCOL_SIZE_BASE + sizeof(Environment)
 #define ALIOLI_PROTOCOL_SIZE_USERREQUEST ALIOLI_PROTOCOL_SIZE_BASE + sizeof(UserRequest)
@@ -41,6 +43,7 @@
 
 typedef struct TAlioliProtocol {
     uint16_t header;
+    uint8_t counter;
     uint8_t kind;   // This field is attached to CRC8, one byte will be used in CRC
     uint16_t payload_size;
     byte *payload;
@@ -56,8 +59,8 @@ typedef struct TAlioliProtocolStatus {
 // === Basic communication ===
 //
 typedef struct THeartBeat {
-    unsigned long int requested;
-    unsigned long int answered;
+    long int requested;
+    long int answered;
 } HeartBeat;
 
 // === Control ===
@@ -128,12 +131,13 @@ typedef struct TEnvironment {
     unsigned short int error_code;
 } Environment;
 
-
-// Pack structures to bytes
-byte* protocol_pack_heartbeat(HeartBeat *heartbeat);
-byte* protocol_pack_environment(Environment *environment);
-byte* protocol_pack_userrequest(UserRequest *userrequest);
-
+// Debugging functions
+#if ALIOLI_PROTOCOL_DEBUG
+const char * protocol_package_kind(uint8_t kind);
+void protocol_print_heartbeat(HeartBeat *heartbeat);
+void protocol_print_environment(Environment *environment);
+void protocol_print_userrequest(UserRequest *userrequest);
+#endif
 
 // Unpack structures from Package
 unsigned short int protocol_unpack_heartbeat(AlioliProtocol *package, HeartBeat *heartbeat);
@@ -141,11 +145,12 @@ unsigned short int protocol_unpack_environment(AlioliProtocol *package, Environm
 unsigned short int protocol_unpack_userrequest(AlioliProtocol *package, UserRequest *userrequest);
 
 // Setup functions
-void protocol_setup_environment(Environment *environment);
-void protocol_setup_userrequest(UserRequest *userrequest);
-
+void protocol_setup_environment(Environment **environment);
+void protocol_setup_userrequest(UserRequest **userrequest);
+void protocol_setup_package(AlioliProtocol *package);
+void protocol_setup_status(AlioliProtocolStatus *status);
 
 // Parse byte-by-byte an Alioli Package
-unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, AlioliProtocolStatus *status);
+unsigned short int protocol_parse_char(char element, AlioliProtocol *package, AlioliProtocolStatus *status);
 
 #endif

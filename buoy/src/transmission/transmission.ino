@@ -10,7 +10,7 @@
 TransmissionConfig transmission_config;
 
 #ifdef MODEM_SERIAL
-unsigned short int modem_cmd(const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer) {
+unsigned short int modem_cmd(const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned long int wait, unsigned long int wait_transfer) {
     return serial_cmd(MODEM_SERIAL, "TR-M", cmd, expected, buf, buf_size, buf_allocated, wait, wait_transfer, 0);
 }
 
@@ -138,7 +138,7 @@ unsigned short int modem_setup() {
 
         // Wait for new data
         buf_size=0;
-        for (retry=10; retry>0; retry--) {
+        for (retry=5; retry>0; retry--) {
 #if DEBUG_MODEM_SETUP
             print_debug("TRsm", stdout, CBLUE, 0, "Waiting for module to RESET %d", retry);
 #endif
@@ -638,7 +638,7 @@ unsigned short int rs485_getmsg(char **buf, size_t *buf_size, size_t *buf_alloca
 unsigned short int rs485_sendmsg(char *buf, size_t buf_size) {
     return serial_send(RS485_SERIAL, buf, buf_size);
 }
-unsigned short int rs485_cmd(const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait) {
+unsigned short int rs485_cmd(const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned long int wait) {
     return serial_cmd(RS485_SERIAL, "TR-R", cmd, expected, buf, buf_size, buf_allocated, wait, 0, 0);
 }
 
@@ -689,6 +689,7 @@ void transmission_setup(long int now) {
     transmission_config.gps_nextevent = 0;
     transmission_config.ourip_nextevent = 0;
     transmission_config.webserver_nextevent = 0;
+    transmission_config.ping_rov_nextevent = 0;
     transmission_config.modem_ready = 0;
     transmission_config.modem_errors = 0;
     transmission_config.modem_linked = 0;
@@ -716,9 +717,11 @@ void transmission_setup(long int now) {
 }
 
 void transmission_loop(long int now) {
-    char *buf=NULL, *answer=NULL;
+    char *buf=NULL, *answer=NULL, *msg = NULL;
     unsigned int buf_size=0, buf_allocated=0, answer_size=0, answer_allocated=0;
     unsigned short int modem_error=0, modem_action=0, rs485_error=0, rs485_action=0;
+    HeartBeat heartbeat;
+
 
     // Check transmission lookup
     if (transmission_config.nextevent<now) {
@@ -757,7 +760,7 @@ void transmission_loop(long int now) {
                     // Message detected
 #if DEBUG_TRANSMISSION
                     print_debug("TRl", stdout, CPURPLE, 0, "MODEM->BUOY msg with %ld bytes", buf_size);
-                    // print_asbin(buf, buf_size, stderr);
+                    print_asbin(buf, buf_size, stderr);
                     print_ashex(buf, buf_size, stderr);
 #endif
 
@@ -787,6 +790,18 @@ void transmission_loop(long int now) {
                         buf_size = 0;
                         transmission_config.modem_linked = 0;
                         communication_reset();
+
+                    // CMTI message (there is a message waiting)
+                    } else if (
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 6), "+CMTI", 6))
+                        ||
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 7), "\n+CMTI", 7))
+                        ||
+                        (!bistrcmp(buf, min(buf_size, (unsigned int) 8), "\r\n+CMTI", 8))
+                    ) {
+#if DEBUG_TRANSMISSION
+                        print_debug("TRl", stdout, CBLUE, 0, "SMS waiting");
+#endif
 
 /*
                     // This message is outdated (use onlye with ModemSimul)
@@ -929,6 +944,28 @@ void transmission_loop(long int now) {
 #ifdef RS485_SERIAL
 
             // === ASK ROV === ================================================
+
+            // If we should send a PING, attach to to the buffer
+            if (transmission_config.ping_rov_nextevent<now) {
+
+#if DEBUG_TRANSMISSION
+                print_debug("TRl", stdout, CCYAN, 0, "Query for ROV's Heartbeat");
+#endif
+
+                // Prepare for next ping
+                transmission_config.ping_rov_nextevent = now+TRANSMISSION_PING_ROV_MS;
+
+                // Set our timestamp
+                heartbeat.requested = get_current_time();
+                heartbeat.answered = 0;
+
+                // Pack
+                msg = (char*) protocol_pack_heartbeat(&heartbeat);
+                if (msg) {
+                    strcat_realloc(&buf, &buf_size, &buf_allocated, msg, ALIOLI_PROTOCOL_SIZE_HEARTBEAT, __FILE__, __LINE__);
+                    free(msg);
+                }
+            }
 
             // If it is a meesage for the ROV
             if (buf_size) {

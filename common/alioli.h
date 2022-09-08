@@ -121,7 +121,7 @@ char* bstos(BString bs);
 
 // === DATE/TIME HELPERS ===
 long int get_current_time (void);
-unsigned long int get_current_time_with_ms (void);
+// long long int get_current_time_with_ms (void);
 int epoch2date(unsigned long int epoch, unsigned int *year, unsigned short int *month, unsigned short int *day, unsigned short int *hour, unsigned short int *minute, unsigned short int *second, unsigned short int *day_of_week, unsigned short int *day_of_year);
 unsigned long int date2epoch(unsigned int year, unsigned short int month, unsigned short int day, unsigned short int hour, unsigned short int minute, unsigned short int second);
 

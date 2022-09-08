@@ -6,6 +6,7 @@ struct TTransmissionConfig {
     long int ourip_nextevent;
     long int webserver_nextevent;
     long int gps_nextevent;
+    long int ping_rov_nextevent;
     unsigned short int modem_ready;
     unsigned short int modem_errors;
     unsigned short int modem_linked;

@@ -972,20 +972,20 @@ long int get_current_time (void) {
     return now;
 }
 
-unsigned long int get_current_time_with_ms (void) {
+/*
+// Removed because it use too much memory and there is no need for it
+long long int get_current_time_with_ms (void) {
     DateTime datetime = rtc.now();
-    long int nows = (long int) datetime.unixtime();
-    long int nowms = (long int) millis();
-    unsigned long int now = (nows*1000) + (nowms - rtc_millis_offset) % 1000;
-    Serial.println(nows);
-    Serial.println(nows*1000);
-    Serial.println(now);
+    long long int nows = (long long int) datetime.unixtime();
+    long long int nowms = (long long int) millis();
+    long long int now = (nows*1000) + (nowms - rtc_millis_offset) % 1000;
+    print_debug(ALIOLI, stdout, CBLUE, 0, "get_current_time_with_ms(): %ld", now);
 #ifdef DEBUG
-    // print_debug(ALIOLI, stdout, "blue", 0, "get_current_time_with_ms(): %ld", now);
+    // print_debug(ALIOLI, stdout, CBLUE, 0, "get_current_time_with_ms(): %ld", now);
 #endif
     return now;
 }
-
+*/
 
 /*
  * =========================================================================================================================================================

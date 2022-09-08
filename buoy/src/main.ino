@@ -106,12 +106,9 @@ void setup() {
     now = millis();
 
     // Show header
+    // ===========
     print_debug("SETUP", stdout, CBLUE, 0, "Bootloader ready (Now: %ld)", now);
     print_debug("SETUP", stdout, CCYAN, 0, "    Alioli library v%s", alioli_version());
-    transmission_setup(now);
-
-    print_debug("SETUP", stdout, CGREEN, 0, "Say Hello!");
-    print_debug("SETUP", stdout, CGREEN, 0, "Ready");
 #ifdef ESP32
     freeram=ESP.getFreeHeap();
 #endif
@@ -130,6 +127,15 @@ void setup() {
     buoy.gps_newdata = 0;
     // Acelerometer (DUMMY)
     buoy.acelerometer_newdata = 1;
+
+    // Setup modules
+    // =============
+    transmission_setup(now);
+
+    // Welcome
+    // =======
+    print_debug("SETUP", stdout, CGREEN, 0, "Say Hello!");
+    print_debug("SETUP", stdout, CGREEN, 0, "Ready");
 
     // Setup Internal LED
     digitalWrite(LED_BUILTIN, LOW);

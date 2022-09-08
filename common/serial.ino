@@ -177,10 +177,10 @@ unsigned short int serial_send(int serial, const char *msg, size_t bytes) {
     return !error;
 }
 
-unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer, unsigned short int newlines) {
+unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned long int wait, unsigned long int wait_transfer, unsigned short int newlines) {
     unsigned short int error=0, newline_counted=0;
     int incomingByte = 0;
-    unsigned int start=0;
+    unsigned long int start=0;
     long int bauds=0, waitbuffer=0;
     size_t max_bytes = SERIAL_MAX_BYTES;
 
@@ -280,7 +280,7 @@ unsigned short int serial_recv(int serial, char **buf, size_t *buf_size, size_t 
 
 }
 
-unsigned short int serial_cmd(int serial, const char *header, const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer, unsigned short int newlines) {
+unsigned short int serial_cmd(int serial, const char *header, const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned long int wait, unsigned long int wait_transfer, unsigned short int newlines) {
     unsigned short int error=0;
     char *check=NULL;
     unsigned int check_size=0;

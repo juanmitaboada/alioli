@@ -62,8 +62,8 @@ void transmission_loop(long int now) {
                     // Message detected
 #if DEBUG_TRANSMISSION_MSG
                     print_debug("TRl", stdout, CPURPLE, 0, "MSG:");
-                    print_asbin(buf, buf_size, stderr);
-                    print_ashex(buf, buf_size, stderr);
+                    // print_asbin(buf, buf_size, stderr);
+                    print_ashex(buf, buf_size, stdout);
 #endif
 
                     // HELLO msg
@@ -82,7 +82,7 @@ void transmission_loop(long int now) {
                         print_debug("TRl", stdout, CCYAN, 0, "REMOTE MSG");
 #endif
                         answer_size = 0;
-                        remote_msg(&buf, &buf_size, &buf_allocated, &answer, &answer_size, &answer_allocated);
+                        remote_msg(&buf, &buf_size, &buf_allocated, &answer, &answer_size, &answer_allocated, now);
                     }
 
                 // Send message to RS485

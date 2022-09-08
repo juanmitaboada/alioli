@@ -116,8 +116,17 @@ void setup() {
     now = millis();
 
     // Show header
+    // ===========
     print_debug("SETUP", stdout, CBLUE, COLOR_NORMAL, "Bootloader ready (Now: %ld)", now);
     print_debug("SETUP", stdout, CCYAN, COLOR_NORMAL, "    Alioli library v%s", alioli_version());
+
+    // Setup main object
+    // =================
+    protocol_setup_environment(&rov.environment);
+    protocol_setup_userrequest(&rov.userrequest);
+
+    // Setup modules
+    // =============
     monitor_setup(now);
     transmission_setup(now);
     control_setup(now);
@@ -125,15 +134,13 @@ void setup() {
     brain_setup(now);
     engines_setup(now);
 
+    // Welcome
+    // =======
     print_debug("SETUP", stdout, CGREEN, COLOR_NORMAL, "Say Hello!");
     lights_dance(now);
 
     print_debug("SETUP", stdout, CGREEN, COLOR_NORMAL, "Ready");
 
-    // Setup main object
-    // =================
-    protocol_setup_environment(&rov.environment);
-    protocol_setup_userrequest(&rov.userrequest);
 
     // Setup Internal LED
     digitalWrite(LED_BUILTIN, LOW);
