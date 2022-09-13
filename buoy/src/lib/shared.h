@@ -15,7 +15,7 @@ RTC_DS3231 rtc;
 long int rtc_millis_offset;
 
 // === Temperature ===
-#include <OneWire.h>
+#include <OneWireNg_CurrentPlatform.h>            // Temperature Sensor
 #include <DallasTemperature.h>
 
 // Instance to OneWire and DallasTemperature classes

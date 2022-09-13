@@ -12,14 +12,22 @@ const char *BL="BL";
 
 void brain_setup(long int now) {
 #if DEBUG_BRAIN
+#if OPTIMIZE
+    Serial.print(F("BS: INI "));
+#else
     print_debug(BS, stdout, "purple", COLOR_NORMAL, "INI");
+#endif
 #endif
 
     // Initilize
     brain_config.nextevent=0;
 
 #if DEBUG_BRAIN
+#if OPTIMIZE
+    Serial.println(F("DONE"));
+#else
     print_debug(BS, stdout, "purple", COLOR_NORMAL, "DONE");
+#endif
 #endif
 }
 

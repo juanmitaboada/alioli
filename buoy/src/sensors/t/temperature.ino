@@ -3,9 +3,6 @@
 #include "lib/common/alioli.h"
 
 // === TEMPERATURE SENSOR ===
-#include <OneWire.h>
-#include <DallasTemperature.h>
-
 #include "temperature.h"
 
 TemperatureConfig temperature_config;
@@ -25,15 +22,13 @@ void temperature_setup(long int now) {
 #endif
 
     // Prepare access to sensor
-    OneWire oneWireObject(PINOUT_ONEWIRE_BUS_pin);
-    DallasTemperature sensorDS18B20(&oneWireObject);
-
-    // Startup sensor
-    sensorDS18B20.begin(); 
+    new (&ow) OneWireNg_CurrentPlatform(PINOUT_ONEWIRE_BUS_PIN, false);
+    DSTherm drv(*ow);
+    drv.filterSupportedSlaves();
 
     // Set environment
-    rov.environment.temperature1 = 0.0;
-    rov.environment.temperature2 = 0.0;
+    buoy.environment.temperature1 = 0.0;
+    buoy.environment.temperature2 = 0.0;
 
     // Set local config
     temperature_config.nextevent=0;
@@ -50,10 +45,8 @@ void temperature_setup(long int now) {
 // === LOOP === ================================================================================
 
 void temperature_loop(long int now) {
+    Placeholder<DSTherm::Scratchpad> scrpd;
     float temperature1=0.0, temperature2=0.0;
-#if DEBUG_SENSORS_TEMPERATURE
-    char s1[20]="", s2[20]="";
-#endif
 
     // Check temperature lookup
     if (temperature_config.nextevent<now) {
@@ -61,25 +54,25 @@ void temperature_loop(long int now) {
         // Set next event
         temperature_config.nextevent = now+TEMPERATURE_LOOKUP_MS;
 
-        // Instance to OneWire and DallasTemperature classes$
-        OneWire oneWireObject(PINOUT_ONEWIRE_BUS_pin);
-        DallasTemperature sensorDS18B20(&oneWireObject);
-        DeviceAddress temp1 = TEMPERATURE_SENSOR_1;
-        DeviceAddress temp2 = TEMPERATURE_SENSOR_2;
+        // Instance to OneWireNG and its elements
+        DSTherm drv(*ow);
 
         // Get temperature from the sensors
-        sensorDS18B20.requestTemperatures();
-        // temperature = sensorDS18B20.getTempCByIndex(0);
-        temperature1 = sensorDS18B20.getTempC(temp1);
-        temperature2 = sensorDS18B20.getTempC(temp2);
+        drv.convertTempAll(DSTherm::SCAN_BUS, false);
+        if (drv.readScratchpad(TEMPERATURE_SENSOR_1, &scrpd) == OneWireNg::EC_SUCCESS) {
+            temperature1 = scrpd->getTh();
+        }
+        if (drv.readScratchpad(TEMPERATURE_SENSOR_2, &scrpd) == OneWireNg::EC_SUCCESS) {
+            temperature2 = scrpd->getTh();
+        }
         // temperature== -127.01 ===> ERROR
 
         // Save temperature
-        rov.environment.temperature1 = temperature1;
-        rov.environment.temperature2 = temperature2;
+        buoy.environment.temperature1 = temperature1;
+        buoy.environment.temperature2 = temperature2;
 
 #if DEBUG_SENSORS_TEMPERATURE
-        print_debug(TL, stdout, CYELLOW, COLOR_NORMAL, "Temperature 1: %sºC - Temperature 2: %sºC", dtostrf(temperature1, 8, 4, s1), dtostrf(temperature2, 8, 4, s2));
+        print_debug(TL, stdout, CYELLOW, COLOR_NORMAL, "Temperature 1: %.2fºC - Temperature 2: %.2fºC", temperature1, temperature2);
 #endif
     }
 

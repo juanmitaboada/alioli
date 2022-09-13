@@ -20,15 +20,28 @@ const char *PRESSURE_LOOP="PLS";
 // === SETUP === ===============================================================================
 void pressure_setup(long int now) {
     int found=0, counter=0;
+#if DEBUG_SENSORS
+#if OPTIMIZE
+    Serial.print(F("PRESSURE INI"));
+#else
     print_debug(PRESSURE_SETUP, stdout, CPURPLE, COLOR_NORMAL, "INI");
+#endif
+#endif
 
     // Initialize BMP
     counter=0;
     found=0;
     found = bmp.begin(PRESSURE_SENSOR_ADDRESS);
     while (!found) {
+
+#if DEBUG_SENSORS
+#if OPTIMIZE
+        Serial.print(F("PRESSURE : couldn't find a valid BMP sensor, check wiring or I2C ADDR! "));
+#else
         print_debug("BMP-SETUP", stdout, CPURPLE, 0, "Could not find a valid BMP sensor, check wiring or I2C ADDR!");
+#endif
         delay(500);
+#endif
         counter++;
         if (counter<10) {
             found = bmp.begin();
@@ -39,7 +52,11 @@ void pressure_setup(long int now) {
     if (!found) {
         // Close in a loop just in case (but lights_error is already a closed bucle)
         while (1) {
+#if OPTIMIZE
+            lights_error(NULL, __FILE__, __LINE__);
+#else
             lights_error("Could not find a valid BMP sensor, we won't continue!", __FILE__, __LINE__);
+#endif
         }
     }
 
@@ -57,7 +74,13 @@ void pressure_setup(long int now) {
     // Set local config
     pressure_config.nextevent=0;
 
+#if DEBUG_SENSORS
+#if OPTIMIZE
+    Serial.print(F("PRESSURE DONE"));
+#else
     print_debug(PRESSURE_SETUP, stdout, CPURPLE, COLOR_NORMAL, "DONE");
+#endif
+#endif
 }
 
 // === LOOP === ================================================================================

@@ -8,12 +8,9 @@
 #define PRINT_DEBUG_OVERFLOW_STRING " [...]"
 #define ALIOLI_PRINT_AS_TEMP_LEN 50
 
-#ifndef byte
-#define byte uint8_t
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
@@ -22,8 +19,11 @@
 #include <stdarg.h>
 
 #include "color.h"
-#include "half.h"
 
+// Define byte type
+#ifndef byte
+#define byte uint8_t
+#endif
 
 // === PREPROCESSOR ===
 #define FIELD_SIZEOF(t, f) (sizeof(((t*)0)->f))
@@ -128,19 +128,6 @@ unsigned long int date2epoch(unsigned int year, unsigned short int month, unsign
 
 // === ENCODERS ===
 byte CRC8(const byte *data, size_t dataLength);
-
-
-// === MATHEMATICAL FUNCTIONS ===
-
-// Define halffloat
-typedef uint16_t halffloat;
-
-// Convert halffloat types
-float halffloat2float(halffloat hf);
-halffloat float2halffloat(float f);
-
-// Extract half float
-float gethf(halffloat hf);
 
 
 // === INTERNAL INFORMATION FROM THIS  LIBRARY ===

@@ -57,9 +57,12 @@ void setup() {
 
     // Header
     Serial.begin(115200);
-    Serial.println("Starting bootloader... (if stuck here is because the CLOCK is not available!)");
+    Serial.println(F("Starting bootloader... (if stuck here is because the CLOCK is not available!)"));
 
-    // Starutp Internal LED
+    // Protocol alignment test
+    protocol_alignment_test();
+
+    // Startup Internal LED
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
 
@@ -75,14 +78,20 @@ void setup() {
 #endif
 
     // Show header
+#if DEBUG_SETUP
     print_debug("SETUP", stdout, CBLUE, COLOR_NORTC_NORMAL, "%s v%s (Build: %s - %s)", SYSNAME, VERSION, BUILD_VERSION, BUILD_DATE);
+#endif
     delay(1000);
 
     // Detect clock
 #if RTC
+#if DEBUG_SETUP
     print_debug("SETUP", stdout, CCYAN, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
+#endif
     while (!rtc.begin()) {
+#if DEBUG_SETUP
         print_debug("SETUP", stdout, CRED, COLOR_NORTC_NORMAL, "Waiting for CLOCK to be available!");
+#endif
         delay(1000);
         digitalWrite(LED_BUILTIN, LOW);
         delay(1000);
@@ -102,6 +111,10 @@ void setup() {
 
     if (rtc.lostPower()) {
         // Set datetime to compilation date time
+        Serial.print(F("RTC - NO BATTERY - Setting datetime to firmware datetime: "));
+        Serial.print(F(__DATE__));
+        Serial.print(F(" "));
+        Serial.println(F(__TIME__));
         rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     }
 
@@ -118,12 +131,15 @@ void setup() {
     // Show header
     // ===========
     print_debug("SETUP", stdout, CBLUE, COLOR_NORMAL, "Bootloader ready (Now: %ld)", now);
+#if DEBUG_SETUP
     print_debug("SETUP", stdout, CCYAN, COLOR_NORMAL, "    Alioli library v%s", alioli_version());
+#endif
 
     // Setup main object
     // =================
     protocol_setup_environment(&rov.environment);
     protocol_setup_userrequest(&rov.userrequest);
+    rov.environment_newdata = 0;
 
     // Setup modules
     // =============
@@ -136,11 +152,16 @@ void setup() {
 
     // Welcome
     // =======
+#if DEBUG_SETUP
     print_debug("SETUP", stdout, CGREEN, COLOR_NORMAL, "Say Hello!");
+#endif
     lights_dance(now);
 
+#if OPTIMIZE
+    Serial.println(F("Ready"));
+#else
     print_debug("SETUP", stdout, CGREEN, COLOR_NORMAL, "Ready");
-
+#endif
 
     // Setup Internal LED
     digitalWrite(LED_BUILTIN, LOW);

@@ -8,6 +8,8 @@
 
 // Protocol header
 #define ALIOLI_PROTOCOL_MAGIC_HEADER 911
+// #define ALIOLI_PROTOCOL_ALIGNMENT_TEST 0
+// #define ALIOLI_PROTOCOL_DEBUG_DEEP 0
 
 // Package kind
 #define ALIOLI_PROTOCOL_KIND_HEARTBEAT 1
@@ -58,22 +60,23 @@ typedef struct TAlioliProtocolStatus {
 // === Basic communication ===
 //
 typedef struct THeartBeat {
-    long int requested;
-    long int answered;
+    int32_t requested;
+    int32_t answered;
 } HeartBeat;
 
 // === Control ===
 
 typedef struct TUserRequest {
-    signed int x;                   // X-axis [-1000, +1000]
-    signed int y;                   // Y-axis [-1000, +1000]
-    signed int z;                   // Z-axis [-1000, +1000]
-    signed int r;                   // R-axis [-1000, +1000]
-    unsigned int buttons1;          // Buttons 1 :: Bits [but15, but14, ..., but1]
-    unsigned int buttons2;          // Buttons 2 :: Bits [but31, but30, ..., but16]
-    unsigned short int extension;   // Extensions enabled:   0:pitch    1:roll
-    signed int pitch;               // Pitch [-1000, +1000]
-    signed int roll;                // Roll  [-1000, +1000]
+    int16_t x;                   // X-axis [-1000, +1000]
+    int16_t y;                   // Y-axis [-1000, +1000]
+    int16_t z;                   // Z-axis [-1000, +1000]
+    int16_t r;                   // R-axis [-1000, +1000]
+    uint16_t buttons1;          // Buttons 1 :: Bits [but15, but14, ..., but1]
+    uint16_t buttons2;          // Buttons 2 :: Bits [but31, but30, ..., but16]
+    int8_t protocol_alignment_1;
+    uint8_t extension;   // Extensions enabled:   0:pitch    1:roll
+    int16_t pitch;               // Pitch [-1000, +1000]
+    int16_t roll;                // Roll  [-1000, +1000]
 } UserRequest;
 
 
@@ -85,7 +88,7 @@ struct TGPS {
     float altitude;
     float speed;
     float course;
-    unsigned long int epoch;
+    uint32_t epoch;
 };
 typedef struct TGPS GPS;
 
@@ -96,7 +99,10 @@ typedef struct TAcelerometer {
     // int AcX;
     // int AcY;
     // int AcZ;
-    int Tmp;
+    int8_t protocol_alignment_1;
+    int8_t protocol_alignment_2;
+    int8_t protocol_alignment_3;
+    int8_t Tmp;
     // int GyX;
     // int GyY;
     // int GyZ;
@@ -127,10 +133,14 @@ typedef struct TEnvironment {
     WaterAnalisys analisys;
 
     // Extra controls
-    unsigned short int error_code;
+    int8_t protocol_alignment_1;
+    int8_t protocol_alignment_2;
+    int8_t protocol_alignment_3;
+    uint8_t error_code;
 } Environment;
 
 // Debugging functions
+void protocol_alignment_test();
 #if ALIOLI_PROTOCOL_DEBUG
 const char * protocol_package_kind(uint8_t kind);
 void protocol_print_heartbeat(HeartBeat *heartbeat);

@@ -8,17 +8,22 @@
 #define RTC 1
 #define VERIFY_REMOTE_SERVER_ANSWER 1
 #define DUMMY_GPS 1
+#define OPTIMIZE 0
 
 // Debugger
 #define DEBUG
 #define DEBUG_MAIN 0
-#define DEBUG_MODEM_SETUP 1
-#define DEBUG_TRANSMISSION 1
-#define DEBUG_TRANSMISSION_MSG 1
-#define DEBUG_EXPECTED 1
+#define DEBUG_MODEM_SETUP 0
+#define DEBUG_TRANSMISSION 0
+#define DEBUG_TRANSMISSION_MSG 0
+#define DEBUG_EXPECTED 0
+#define DEBUG_SENSORS 0
+#define DEBUG_SENSORS_TEMPERATURE 0
+#define DEBUG_SENSORS_POWER 0
 
 // Lookups
 #define TEMPERATURE_LOOKUP_MS 500
+#define POWER_LOOKUP_MS 500
 
 // Lights
 #define LIGHTS 0
@@ -39,16 +44,10 @@
 // POWER SENSOR
 #define POWER_INA219_MUST_EXIST 1   // INA219 device must exists
 
-// GYROSCOPE
-#define GYROSCOPE_MPU_MUST_EXIST 1  // MPU device must exists
-#define GYROSCOPE_MPU 0x69          // I2C address of the MPU-6050 (68h, addre=1:69h)
-// #define GYROSCOPE_BNO_MUST_EXIST 0  // BNO device must exists
-// #define GYROSCOPE_BNO 0x28          // I2C address of the BNO-055 (28h, addr=1:29h)
-
 // Temperature
-// #define PINOUT_ONEWIRE_BUS_pin 3    // Digital pin
-// #define TEMPERATURE_SENSOR_1 {0x28, 0x6A, 0x30, 0x45, 0x92,  0x5, 0x2, 0xD3}
-// #define TEMPERATURE_SENSOR_2 {0x28, 0x2E, 0xEC, 0x45, 0x92, 0x15, 0x2, 0xE9}
+#define PINOUT_ONEWIRE_BUS_PIN 15   // Digital pin (GP15)
+#define TEMPERATURE_SENSOR_1 {0x28, 0xFF, 0x64, 0x1E, 0x5F, 0xBD, 0x68, 0x63}
+#define TEMPERATURE_SENSOR_2 {0x28, 0xFF, 0x64, 0x1E, 0x5F, 0xBB, 0x7D, 0x6B}
 
 // Transmission
 // Valid speed (baud rates): 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 31250, 38400, 57600, and 115200

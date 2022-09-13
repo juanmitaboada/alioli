@@ -8,7 +8,8 @@
 #endif
 
 #include <OneWireNg_CurrentPlatform.h>            // Temperature Sensor
-#include <DallasTemperature.h>
+#include <drivers/DSTherm.h>
+#include <utils/Placeholder.h>
 
 #include <Adafruit_Sensor.h>    // BNO055 - Adafruit Sensor
 #include <Adafruit_BusIO_Register.h>
@@ -102,6 +103,7 @@ void setup() {
         Serial.println(F(__TIME__));
         rtc.adjust(DateTime(F(__DATE__), F( __TIME__)));
     }
+    rtc.adjust(DateTime(F(__DATE__), F( __TIME__)));
 
     // Set millis offset
     rtc_millis_offset = millis();
@@ -140,6 +142,16 @@ void setup() {
     // Setup modules
     // =============
     sensors_setup(now);
+
+    while (1) {
+        now = millis();
+        print_debug("SETUP", stdout, CCYAN, 0, "Set time to: %s - %s", __DATE__, __TIME__);
+        rtc.adjust(DateTime(__DATE__, __TIME__));
+        print_debug("SETUP", stdout, CCYAN, 0, "Read time...");
+        sensors_loop(now);
+        delay(1000);
+    }
+
     transmission_setup(now);
 
     // Welcome

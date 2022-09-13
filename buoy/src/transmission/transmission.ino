@@ -10,6 +10,15 @@
 
 TransmissionConfig transmission_config;
 
+void tranmission_switch_led(unsigned short int *value) {
+    if (*value) {
+        digitalWrite(LED_BUILTIN, LOW);
+    } else {
+        digitalWrite(LED_BUILTIN, HIGH);
+    }
+    (*value) = !(*value);
+}
+
 #ifdef MODEM_SERIAL
 unsigned short int modem_cmd(const char *cmd, const char *expected, char **buf, size_t *buf_size, size_t *buf_allocated, unsigned long int wait, unsigned long int wait_transfer) {
     return serial_cmd(MODEM_SERIAL, "TR-M", cmd, expected, buf, buf_size, buf_allocated, wait, wait_transfer, 0);
@@ -102,7 +111,7 @@ unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_a
 unsigned short int modem_setup() {
     char *buf=NULL, *cmd=NULL, *pointer=NULL;
     size_t buf_size=0, buf_allocated=0;
-    unsigned short int error=0, pin_ready=0, i=0, retry=0;
+    unsigned short int error=0, pin_ready=0, i=0, retry=0, led=0;
 
     // Prepare cmd
     cmd = (char*) malloc(sizeof(char)*400);
@@ -113,6 +122,7 @@ unsigned short int modem_setup() {
     transmission_config.modem_linked = 0;
 
     // Show information
+    tranmission_switch_led(&led);
 #if DEBUG_MODEM_SETUP
     print_debug(NULL, stdout, CBLUE, COLOR_NOHEAD_NOTAIL, "MODEM=VERBOSE ");
 #endif
@@ -127,13 +137,16 @@ unsigned short int modem_setup() {
         print_debug("TRsm", stdout, CBLUE, 0, "+++");
 #endif
         // Make sure we are online
+        tranmission_switch_led(&led);
         if (!modem_cmd("+++", NULL, &buf, &buf_size, &buf_allocated, 1000, 1000)) {
             // Try a second time
+            tranmission_switch_led(&led);
             modem_cmd("+++", NULL, &buf, &buf_size, &buf_allocated, 1000, 1000);
         }
     }
 
     // Do a full RESET from the MODULE before starting
+    tranmission_switch_led(&led);
     modem_cmd("AT+CRESET\r\n", "OK", &buf, &buf_size, &buf_allocated, 1000, 1000);
     if (!bistrstr(buf, buf_size, "RDY", 3)) {
 
@@ -143,6 +156,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
             print_debug("TRsm", stdout, CBLUE, 0, "Waiting for module to RESET %d", retry);
 #endif
+            tranmission_switch_led(&led);
             if (serial_recv(MODEM_SERIAL, &buf, &buf_size, &buf_allocated, 10000, 1000, 0)) {
                 if (bistrstr(buf, buf_size, "RDY", 3)) {
                     break;
@@ -164,6 +178,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CTRL+Z");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
     }
 #endif
@@ -173,6 +188,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "RESET");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
     }
 
@@ -181,8 +197,10 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "ECHO OFF");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("ATE0\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 100);
         // Empty buffer
+        tranmission_switch_led(&led);
         modem_getmsg(&buf, &buf_size, &buf_allocated, 0, 0);
     }
 
@@ -191,6 +209,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK AT");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("AT\r\n", "OK", &buf, &buf_size, &buf_allocated, 500, 0);
         if (!error) {
             if (!bistrstr(buf, buf_size, "OK", 2)) {
@@ -213,6 +232,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "Reset MODULE (10 sec)");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("AT+CFUN=6\r\n", "OK", &buf, &buf_size, &buf_allocated, 10000, 0);
     }
 
@@ -221,6 +241,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "Enable MODULE (15 sec)");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("AT+CFUN=1\r\n", "OK", &buf, &buf_size, &buf_allocated, 15000, 0);
     }
 
@@ -229,6 +250,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "RESET");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
     }
 
@@ -237,6 +259,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "ECHO OFF");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("ATE0\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 100);
     }
 
@@ -245,6 +268,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK AT");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("AT\r\n", "OK", &buf, &buf_size, &buf_allocated, 500, 0);
     }
 
@@ -253,6 +277,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK PIN STATUS");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("AT+CPIN?\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 0);
         if (!error) {
             sprintf(cmd, "+CPIN: READY");
@@ -285,6 +310,7 @@ unsigned short int modem_setup() {
         print_debug("TRsm", stdout, CBLUE, 0, "SEND PIN");
 #endif
         sprintf(cmd, "AT+CPIN=%d\r\n", MODEM_PIN);
+        tranmission_switch_led(&led);
         error = !modem_cmd(cmd, NULL, &buf, &buf_size, &buf_allocated, 5000, 2000);
         if (!error) {
 
@@ -316,6 +342,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "AT+CMGD=1,4  (Delete ALL SMSs)");
 #endif
+        tranmission_switch_led(&led);
         modem_cmd("AT+CMGD=1,4\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
     }
 
@@ -324,6 +351,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "CIPMODE=1");
 #endif
+        tranmission_switch_led(&led);
         modem_cmd("AT+CIPMODE=1\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
     }
 
@@ -334,6 +362,7 @@ unsigned short int modem_setup() {
 #endif
 
         // Go as usually
+        tranmission_switch_led(&led);
         error = !modem_cmd("AT+NETOPEN\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
         if (!error) {
             // Check if OK is in the answer
@@ -352,6 +381,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
                             print_debug("TRsm", stdout, CBLUE, 0, "Waiting for link %d", retry);
 #endif
+                            tranmission_switch_led(&led);
                             if (!serial_recv(MODEM_SERIAL, &buf, &buf_size, &buf_allocated, 1000, 500, 0)) {
                                 retry = 0;
                                 print_debug("TRsm", stderr, CRED, 0, "Error while reading serial port");
@@ -400,6 +430,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRsm", stdout, CBLUE, 0, "Get IPDDR");
 #endif
+        tranmission_switch_led(&led);
         error = !modem_cmd("AT+IPADDR\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
         if (!error) {
             sprintf(cmd, "\r\n+IPADDR: ");
@@ -452,6 +483,7 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
         print_debug("TRm", stdout, CBLUE, 0, "Send our IPADDR");
 #endif
+        tranmission_switch_led(&led);
         error = modem_send_our_ip(&buf, &buf_size, &buf_allocated);
 #if DEBUG_MODEM_SETUP
         if (!error) {
@@ -468,9 +500,11 @@ unsigned short int modem_setup() {
 
         // Go as usually
         sprintf(cmd, "AT+SERVERSTART=%d,0\r\n", EXTERNAL_PORT);
+        tranmission_switch_led(&led);
         if (modem_cmd(cmd, "OK", &buf, &buf_size, &buf_allocated, 2000, 500)) {
             // Verify that server is UP
             sprintf(cmd, "+SERVERSTART: 0,%d", EXTERNAL_PORT);
+            tranmission_switch_led(&led);
             if (modem_cmd("AT+SERVERSTART?\r\n", cmd, &buf, &buf_size, &buf_allocated, 500, 0)) {
                 // Server is UP
                 print_debug(NULL, stdout, CWHITE, COLOR_NOHEAD_NOTAIL, "MODEM=%s:%d ", transmission_config.ipaddr, EXTERNAL_PORT);

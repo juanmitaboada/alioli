@@ -42,16 +42,23 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
 
                         // Unpack
                         if (protocol_unpack_heartbeat(&communication_config.alioli_protocol_msg, &heartbeat)) {
+#if DEBUG_COMMUNICATION
+#if OPTIMIZE
+                            Serial.print(F("HEARTBEAT: Delay="));
+                            Serial.println(heartbeat.answered-heartbeat.requested);
+#else
                             print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "HEARTBEAT: %ld delay", heartbeat.answered-heartbeat.requested);
+#endif
+#endif
 
                             // Set our timestamp
-                            heartbeat.answered = get_current_time();
+                            heartbeat.answered = (int32_t) get_current_time();
 
                             // Attach answer
                             protocol_pack_heartbeat(&heartbeat, communication_config.alioli_protocol_msg.counter, answer, answer_size, answer_allocated);
 
                             // Check if environment was updated
-                            if (rov.environment_updated) {
+                            if (rov.environment_newdata) {
 
                                 // Attach our environment
                                 protocol_pack_environment(&(rov.environment), protocol_counter, answer, answer_size, answer_allocated);
@@ -63,8 +70,14 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
 
                             }
 
+#if DEBUG_COMMUNICATION
                         } else {
+#if OPTIMIZE
+                            Serial.println(F("HEARTBEAT: wrong package"));
+#else
                             print_debug(CCOMMUNICATION, stderr, CRED, 0, "HEARTBEAT: wrong package");
+#endif
+#endif
                         }
                     }
                     break;
@@ -75,18 +88,45 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         // Unpack
                         if (protocol_unpack_userrequest(&communication_config.alioli_protocol_msg, &rov.userrequest)) {
 
-                            // Got a valid userrequest
-                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "UserRequest: (%d, %d, %d, %d)", rov.userrequest.x, rov.userrequest.y, rov.userrequest.z, rov.userrequest.r);
 
+                            // Got a valid userrequest
+#if DEBUG_COMMUNICATION
+#if OPTIMIZE
+                            Serial.print(F("UserRequest: X="));
+                            Serial.print(rov.userrequest.x);
+                            Serial.print(F(", Y="));
+                            Serial.print(rov.userrequest.y);
+                            Serial.print(F(", Z="));
+                            Serial.print(rov.userrequest.z);
+                            Serial.print(F(", R="));
+                            Serial.print(rov.userrequest.r);
+                            Serial.println();
+#else
+                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "UserRequest: (%d, %d, %d, %d)", rov.userrequest.x, rov.userrequest.y, rov.userrequest.z, rov.userrequest.r);
+#endif
+#endif
+#if DEBUG_COMMUNICATION
                         } else {
+#if OPTIMIZE
+                            Serial.println(F("UserRequest: wrong package"));
+#else
                             print_debug(CCOMMUNICATION, stderr, CRED, 0, "UserRequest: wrong package");
+#endif
+#endif
                         }
                     }
                     break;
 
+#if DEBUG_COMMUNICATION
                 default:
+#if OPTIMIZE
+                    Serial.print(F("ALIOLI PROTOCOL Unknown message kind: "));
+                    Serial.println(communication_config.alioli_protocol_msg.kind);
+#else
                     //Do nothing
                     print_debug(CCOMMUNICATION, stdout, CYELLOW, 0, "ALIOLI PROTOCOL Unknown message with KIND %d", communication_config.alioli_protocol_msg.kind);
+#endif
+#endif
             }
         }
 
@@ -107,13 +147,26 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
 
     // If something in the buffer, warn about it!
     if (communication_config.alioli_protocol_buf_size) {
+#if DEBUG_COMMUNICATION
+#if OPTIMIZE
+        Serial.print(F("ALIOLI PROTOCOL BUFFER: "));
+        Serial.println(communication_config.alioli_protocol_buf_size);
+#else
         print_debug(CCOMMUNICATION, stdout, CBLUE, 0, "ALIOLI PROTOCOL Buffer: %d", communication_config.alioli_protocol_buf_size);
+#endif
+#endif
     }
 
     // We didn't get any alioli_protocol message
+#if DEBUG_COMMUNICATION
     if (!gotmsg) {
+#if OPTIMIZE
+        Serial.println(F("ERROR: didn't get an ALIOLI PROTOCOL message"));
+#else
         print_debug(CCOMMUNICATION, stderr, CRED, 0, "ERROR: didn't get an ALIOLI PROTOCOL message");
+#endif
     }
+#endif
 
     // Return result
     return gotmsg;

@@ -6,7 +6,7 @@
 struct TRov {
     UserRequest userrequest;
     Environment environment;
-    unsigned short int environment_updated;
+    unsigned short int environment_newdata;
 };
 typedef struct TRov Rov;
 

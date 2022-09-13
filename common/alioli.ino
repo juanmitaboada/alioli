@@ -967,8 +967,12 @@ char* bstos(BString bs) {
 
 // === DATE/TIME HELPERS ===
 long int get_current_time (void) {
+#if RTC
     DateTime datetime = rtc.now();
     long int now = (long int) datetime.unixtime();
+#else
+    long int now = millis();
+#endif
 #ifdef DEBUG
     // print_debug(ALIOLI, stdout, "blue", 0, "get_current_time(): %ld", now);
 #endif
@@ -1151,28 +1155,6 @@ byte CRC8(const byte *data, size_t dataLength) {
     return crc;
 }
 
-
-
-// === MATHEMATICAL FUNCTIONS ===
-// Convert halffloat types
-float halffloat2float(halffloat hf) {
-    int b = half_to_float(hf);
-    float c=0;
-    memcpy(&c, &b, sizeof(c));
-    return c;
-}
-halffloat float2halffloat(float f) {
-    halffloat hf=0.0;
-    int32_t c=0;
-    memcpy(&c, &f, sizeof(c));
-    hf = half_from_float(c);
-    return hf;
-}
-
-// Extract half float
-float gethf(halffloat hf) {
-    return halffloat2float(hf);
-}
 
 const char * alioli_version(void) { return ALIOLI_VERSION; }
 

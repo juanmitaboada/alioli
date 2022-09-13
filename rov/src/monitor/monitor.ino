@@ -70,7 +70,14 @@ void lights_error(const char *error, const char *file, int line) {
         light_set_off(&monitor_config.red, -1, now);
         light_set_on(&monitor_config.green, -1, now);
         delay(1000);
-        print_debug("TERMINAL ERROR", stderr, CRED, 0, "%s:%d: ERROR: %s", file, line, error);
+        if (error) {
+#if OPTIMIZE
+            Serial.print(F("TERMINAL ERROR: "));
+            Serial.println(error);
+#else
+            print_debug("TERMINAL ERROR", stderr, CRED, 0, "%s:%d: ERROR: %s", file, line, error);
+#endif
+        }
     }
 }
 

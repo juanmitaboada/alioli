@@ -182,9 +182,17 @@ void engine_move(const char* name, unsigned short int target) {
         engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
     } else if (target==ROVER_LOOK_UP) {
+#if OPTIMIZE
+        Serial.println(F("Movemente not alowed: look up"));
+#else
         print_debug("ENGINE-MOVE", stderr, CYELLOW, 0, "This movement is not allowed in this design!");
+#endif
     } else if (target==ROVER_LOOK_DOWN) {
+#if OPTIMIZE
+        Serial.println(F("Movemente not alowed: look down"));
+#else
         print_debug("ENGINE-MOVE", stderr, CYELLOW, 0, "This movement is not allowed in this design!");
+#endif
     } else if (target==ROVER_ROLL_LEFT) {
         engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
         engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
@@ -200,7 +208,11 @@ void engine_move(const char* name, unsigned short int target) {
         engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
         engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
     } else {
+#if OPTIMIZE
+        Serial.println(F("Movemente not alowed: look down"));
+#else
         print_debug("ENGINE-MOVE", stderr, CRED, 0, "Wrong movement!");
+#endif
     }
 
 

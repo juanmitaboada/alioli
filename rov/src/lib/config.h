@@ -4,6 +4,7 @@
 // General config
 #define QUICK_START 1
 #define RTC 1
+#define OPTIMIZE 1
 
 // Debugger
 #define ALIOLI_ASSERTS 1
@@ -18,8 +19,9 @@
 #define DEBUG_BRAIN 0
 #define DEBUG_ENGINES 0
 #define DEBUG_MONITOR 0
-#define DEBUG_TRANSMISSION 1
-#define DEBUG_TRANSMISSION_MSG 1
+#define DEBUG_TRANSMISSION 0
+#define DEBUG_TRANSMISSION_MSG 0
+#define DEBUG_COMMUNICATION 0
 
 // Lookups
 // #define PAD_LOOKUP_MS 500

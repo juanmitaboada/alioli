@@ -1,3 +1,4 @@
+#include "lib/config.h"
 #include "lib/shared.h"
 #include "lib/common/alioli.h"
 #include "lib/common/serial.h"
@@ -25,7 +26,11 @@ unsigned short int rs485_sendmsg(char *buf, size_t buf_size) {
 
 void transmission_setup(long int now) {
 #if DEBUG_TRANSMISSION
+#if OPTIMIZE
+    Serial.print(F("TRANSMISSION-SETUP: INI-> "));
+#else
     print_debug("TRANSMISSION-SETUP", stdout, CPURPLE, COLOR_NOTAIL, "INI -> ");
+#endif
 #endif
 
     // Setup serial ports
@@ -37,7 +42,11 @@ void transmission_setup(long int now) {
 
 #if DEBUG_TRANSMISSION
     // Show we are done
+#if OPTIMIZE
+    Serial.println(F("DONE"));
+#else
     print_debug("TRANSMISSION-SETUP", stdout, CGREEN, COLOR_NOHEAD, "DONE");
+#endif
 #endif
 }
 
@@ -61,7 +70,11 @@ void transmission_loop(long int now) {
 
                     // Message detected
 #if DEBUG_TRANSMISSION_MSG
+#if OPTIMIZE
+                    Serial.println(F("TRl: MSG:"));
+#else
                     print_debug("TRl", stdout, CPURPLE, 0, "MSG:");
+#endif
                     // print_asbin(buf, buf_size, stderr);
                     print_ashex(buf, buf_size, stdout);
 #endif
@@ -69,7 +82,11 @@ void transmission_loop(long int now) {
                     // HELLO msg
                     if (!bistrcmp(buf, min(buf_size, (unsigned int) 4), "PING", 4)) {
 #if DEBUG_TRANSMISSION
+#if OPTIMIZE
+                        Serial.println(F("TRl: PING->PONG"));
+#else
                         print_debug("TRl", stdout, CCYAN, 0, "PING -> PONG");
+#endif
 #endif
                         answer_size = 0;
                         strcat_realloc(&answer, &answer_size, &answer_allocated, "PONG\n", 5, __FILE__, __LINE__);
@@ -79,7 +96,11 @@ void transmission_loop(long int now) {
                     } else {
                         // Process message locally if linked to external system
 #if DEBUG_TRANSMISSION_MSG
+#if OPTIMIZE
+                        Serial.println(F("TRl: REMOTE MSG"));
+#else
                         print_debug("TRl", stdout, CCYAN, 0, "REMOTE MSG");
+#endif
 #endif
                         answer_size = 0;
                         remote_msg(&buf, &buf_size, &buf_allocated, &answer, &answer_size, &answer_allocated, now);

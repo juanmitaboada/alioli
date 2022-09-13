@@ -31,6 +31,9 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
     int chan = MAVLINK_COMM_0;
     unsigned short int gotmsg=0;
     unsigned int buf_idx=0;
+#ifdef ARDUINO_ARCH_AVR
+    char s1[20]="", s2[20]="", s3[20]="";
+#endif
 
     // Put all together
     if (*buf_size) {
@@ -76,7 +79,11 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                             // Send GPS position
                             mavlink_msg_global_position_int_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.mavlink_msg), millis(), buoy.gps.latitude*pow(10,7), buoy.gps.longitude*pow(10, 7), buoy.gps.altitude, buoy.gps.altitude, 0, 0, 0, 45);
                             mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.mavlink_msg));
-                            print_debug(CMAVLINK, stdout, CWHITE, 0, "GPS: %f - %f - %f", buoy.gps.latitude, buoy.gps.longitude, buoy.gps.altitude);
+#ifdef ARDUINO_ARCH_AVR
+                            print_debug(CMAVLINK, stdout, CWHITE, 0, "GPS: %s - %s - %s", dtostrf(buoy.gps.latitude, 8, 4, s1), dtostrf(buoy.gps.longitude, 8, 4, s2), dtostrf(buoy.gps.altitude, 8, 4, s3));
+#else
+                            print_debug(CMAVLINK, stdout, CWHITE, 0, "GPS: %.2f - %.2f - %.2f", buoy.gps.latitude, buoy.gps.longitude, buoy.gps.altitude);
+#endif
 
                             // The data is not new anymore
                             buoy.gps_newdata = 0;
@@ -118,7 +125,11 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         // print_debug(CMAVLINK, stdout, CBLUE, 0, "COMMAND_LONG: %d, sequence: %d from component %d of system %d", communication_config.mavlink_msg.msgid, communication_config.mavlink_msg.seq, communication_config.mavlink_msg.compid, communication_config.mavlink_msg.sysid);
                         // mavlink_msg_command_long_decode
                         if (mavlink_msg_command_long_get_param1(&(communication_config.mavlink_msg))==MAV_CMD_REQUEST_MESSAGE) {
+#ifdef ARDUINO_ARCH_AVR
+                            // print_debug(CMAVLINK, stdout, CWHITE, 0, "COMMAND_LONG: %s", dtostrf(mavlink_msg_command_long_get_param1(&(communication_config.mavlink_msg)), 8, 4, s1);
+#else
                             // print_debug(CMAVLINK, stdout, CWHITE, 0, "COMMAND_LONG: %f", mavlink_msg_command_long_get_param1(&(communication_config.mavlink_msg)));
+#endif
                         } else {
                             print_debug(CMAVLINK, stdout, CWHITE, 0, "COMMAND_LONG: unknown CMD id %d", mavlink_msg_command_long_get_command(&(communication_config.mavlink_msg)));
                         }
@@ -137,7 +148,11 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         paramUnion.param_float = 45.0;
                         paramUnion.type = MAV_PARAM_TYPE_REAL32;
 
+#ifdef ARDUINO_ARCH_AVR
+                        print_debug(CMAVLINK, stdout, CBLUE, 0, "REQUEST LIST: %d, sequence: %d from component %d of system %d - Sending %s", communication_config.mavlink_msg.msgid, communication_config.mavlink_msg.seq, communication_config.mavlink_msg.compid, communication_config.mavlink_msg.sysid, dtostrf(paramUnion.param_float, 8, 4, s1));
+#else
                         print_debug(CMAVLINK, stdout, CBLUE, 0, "REQUEST LIST: %d, sequence: %d from component %d of system %d - Sending %f", communication_config.mavlink_msg.msgid, communication_config.mavlink_msg.seq, communication_config.mavlink_msg.compid, communication_config.mavlink_msg.sysid, paramUnion.param_float);
+#endif
 
                         // mavlink_msg_param_set_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.mavlink_msg), communication_config.mavlink_msg.sysid, communication_config.mavlink_msg.compid, param_id, paramUnion.param_float, paramUnion.type);
                     }
@@ -213,6 +228,9 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
 unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsigned int *answer_size, unsigned int *answer_allocated) {
     unsigned short int gotmsg=0;
     unsigned int buf_idx=0;
+#ifdef ARDUINO_ARCH_AVR
+    char s1[20]="", s2[20]="";
+#endif
 
     // Put all together
     if (buf_size) {
@@ -235,7 +253,7 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
                     {
                         HeartBeat heartbeat;
                         if (protocol_unpack_heartbeat(&communication_config.alioli_protocol_msg, &heartbeat)) {
-                            print_debug(CROV, stdout, CWHITE, 0, "HEARTBEAT: %ld delay", heartbeat.answered-heartbeat.requested);
+                            print_debug(CROV, stdout, CWHITE, 0, "HEARTBEAT: latency %ld second (Time diff=%ld)", get_current_time() - heartbeat.requested, heartbeat.answered-heartbeat.requested);
                         } else {
                             print_debug(CROV, stderr, CRED, 0, "HEARTBEAT: wrong package");
                         }
@@ -246,7 +264,11 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
                     {
                         Environment environment;
                         if (protocol_unpack_environment(&communication_config.alioli_protocol_msg, &environment)) {
-                            print_debug(CROV, stdout, CWHITE, 0, "Environment: %ldV - %ldA", environment.voltage, environment.amperage);
+#ifdef ARDUINO_ARCH_AVR
+                            print_debug(CROV, stdout, CWHITE, 0, "Environment: %sV - %smA", dtostrf(environment.voltage, 8, 4, s1), dtostrf(environment.amperage, 8, 4, s2));
+#else
+                            print_debug(CROV, stdout, CWHITE, 0, "Environment: %.2fV - %.2fmA", environment.voltage, environment.amperage);
+#endif
                         } else {
                             print_debug(CROV, stderr, CRED, 0, "Environment: wrong package");
                         }

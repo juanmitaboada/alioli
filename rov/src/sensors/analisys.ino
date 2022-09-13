@@ -20,7 +20,13 @@ const char *AL = "AL";
 
 // === SETUP === ===============================================================================
 void analisys_setup(long int now) {
+#if DEBUG_SENSORS
+#if OPTIMIZE
+    Serial.print(F("AS: INI: "));
+#else
     print_debug(AS, stdout, CPURPLE, COLOR_NORMAL, "INI");
+#endif
+#endif
 
     // Setup
     pinMode(ANALISYS_PH, INPUT);
@@ -40,8 +46,13 @@ void analisys_setup(long int now) {
 
     // Set local config
     analisys_config.nextevent=0;
-
+#if DEBUG_SENSORS
+#if OPTIMIZE
+    Serial.println(F("DONE"));
+#else
     print_debug(AS, stdout, CPURPLE, COLOR_NORMAL, "DONE");
+#endif
+#endif
 }
 
 // === LOOP === ================================================================================

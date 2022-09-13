@@ -12,7 +12,13 @@ const char *GL="GL";
 // === SETUP === ==========================================================
 void gyroscope_setup(long int now) {
     unsigned short int counter=0, found=0;
+#if DEBUG_SENSORS
+#if OPTIMIZE
+    Serial.print(F("GS: INI: "));
+#else
     print_debug(GS, stdout, CPURPLE, 0, "INI");
+#endif
+#endif
 
 #ifdef GYROSCOPE_MPU
     // Initialize MPU6050
@@ -20,8 +26,15 @@ void gyroscope_setup(long int now) {
     found=0;
     found = mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G, GYROSCOPE_MPU);
     while (!found) {
+#if DEBUG_SENSORS
+#if OPTIMIZE
+        Serial.println(F("GS: Couldn't find a valid MPU6050 sensors, check wiring or I2C ADDR!"));
+#else
         print_debug(GS, stdout, CPURPLE, 0, "Could not find a valid MPU6050 sensor, check wiring or I2C ADDR!");
+#endif
         delay(500);
+#endif
+
         counter++;
         if (counter<10) {
             found = mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G, GYROSCOPE_MPU);
@@ -34,7 +47,11 @@ void gyroscope_setup(long int now) {
 #if GYROSCOPE_MPU_MUST_EXISTS
         // Close in a loop just in case (but lights_error is already a closed bucle)
         while (1) {
+#if OPTIMIZE
+            lights_error(NULL, __FILE__, __LINE__);
+#else
             lights_error("Could not find a valid MPU6050 sensor, we won't continue!", __FILE__, __LINE__);
+#endif
         }
 #else
         print_debug(GS, stdout, CPURPLE, 0, "Could not find a valid MPU6050 sensor, we will keep going with NO MPU!");
@@ -51,8 +68,14 @@ void gyroscope_setup(long int now) {
     bno = Adafruit_BNO055(GYROSCOPE_BNO);
     found = bno.begin();
     while (!found) {
+#if DEBUG_SENSORS
+#if OPTIMIZE
+        Serial.println(F("GS: Couldn't find a valid BNO055 sensors, check wiring or I2C ADDR!"));
+#else
         print_debug(GS, stdout, CPURPLE, 0, "Could not find a valid BNO055 sensor, check wiring or I2C ADDR!");
+#endif
         delay(500);
+#endif
         counter++;
         if (counter<10) {
             found = bno.begin();
@@ -93,9 +116,14 @@ void gyroscope_setup(long int now) {
     rov.environment.acelerometer.angx = 0.0;
     rov.environment.acelerometer.angy = 0.0;
     rov.environment.acelerometer.angz = 0.0;
-    rov.environment_updated = 1;
-
+    rov.environment_newdata = 1;
+#if DEBUG_SENSORS
+#if OPTIMIZE
+    Serial.println(F("GS: DONE"));
+#else
     print_debug(GS, stdout, CPURPLE, 0, "DONE");
+#endif
+#endif
 }
 
 // === LOOP === ===========================================================
@@ -133,11 +161,11 @@ void gyroscope_loop(long int now) {
 
 #if DEBUG_SENSORS_GYROSCOPE
             // Output raw
-            Serial.print(" Pitch = ");
+            Serial.print(F(" Pitch = "));
             Serial.print(pitch);
-            Serial.print(" Roll = ");
+            Serial.print(F(" Roll = "));
             Serial.print(roll);  
-            Serial.print(" Yaw = ");
+            Serial.print(F(" Yaw = "));
             Serial.println(yaw);
 #endif
         }
@@ -149,15 +177,15 @@ void gyroscope_loop(long int now) {
 #if DEBUG_SENSORS_GYROSCOPE
         temp = bno.getTemp();
         // Display the floating point data
-        Serial.print("X: ");
+        Serial.print(F("X: "));
         Serial.print(event.orientation.x, 4);
-        Serial.print("\tY: ");
+        Serial.print(F("\tY: "));
         Serial.print(event.orientation.y, 4);
-        Serial.print("\tZ: ");
+        Serial.print(F("\tZ: "));
         Serial.print(event.orientation.z, 4);
-        Serial.print("\tCurrent Temperature: ");
+        Serial.print(F("\tCurrent Temperature: "));
         Serial.print(temp);
-        Serial.println(" C");
+        Serial.println(F(" C"));
 #endif
 
     }

@@ -3,6 +3,28 @@
 static uint8_t protocol_counter=1;
 const char *CPROTOCOL="PROTOCOL";
 
+
+#if ALIOLI_PROTOCOL_ALIGNMENT_TEST
+void protocol_alignment_test() {
+    while (1) {
+        Serial.print("Size of Environment: ");
+        Serial.println(sizeof(Environment));
+        Serial.print("  > Size of Acelerometer: ");
+        Serial.println(sizeof(Acelerometer));
+        Serial.print("  > Size of WaterAnalisys: ");
+        Serial.println(sizeof(WaterAnalisys));
+        Serial.print("Size of Heartbeat: ");
+        Serial.println(sizeof(HeartBeat));
+        Serial.print("Size of Heartbeat: ");
+        Serial.println(sizeof(UserRequest));
+        Serial.println();
+        delay(10000);
+    }
+}
+#else
+void protocol_alignment_test() {}
+#endif
+
 #if ALIOLI_PROTOCOL_DEBUG
 const char * protocol_package_kind(uint8_t kind) {
     if (kind == ALIOLI_PROTOCOL_KIND_HEARTBEAT) {
@@ -22,6 +44,27 @@ void protocol_print_heartbeat(HeartBeat *heartbeat) {
 }
 
 void protocol_print_environment(Environment *environment) {
+    char s1[20]="";
+#ifdef ARDUINO_ARCH_AVR
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Altitude: %s%s", COLOR_WHITE, dtostrf(environment->altitude, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Pressure: %s%s", COLOR_WHITE, dtostrf(environment->pressure, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Temperature Gy: %s%s", COLOR_WHITE, dtostrf(environment->temperaturegy, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Temperature 1: %s%s", COLOR_WHITE, dtostrf(environment->temperature1, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Temperature 2: %s%s", COLOR_WHITE, dtostrf(environment->temperature2, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Temperature BMP: %s%s", COLOR_WHITE, dtostrf(environment->temperaturebmp, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Voltage: %s%s", COLOR_WHITE, dtostrf(environment->voltage, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Amperage: %s%s", COLOR_WHITE, dtostrf(environment->amperage, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer Tmp: %s%d", COLOR_WHITE, environment->acelerometer.Tmp);
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer AngX: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.angx, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer AngY: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.angy, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Aceleromter AngZ: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.angz, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys PH: %s%s", COLOR_WHITE, dtostrf(environment->analisys.ph, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys PH Temp: %s%s", COLOR_WHITE, dtostrf(environment->analisys.ph_temp, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys ORP: %s%s", COLOR_WHITE, dtostrf(environment->analisys.orp, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys ORP Temp: %s%s", COLOR_WHITE, dtostrf(environment->analisys.orp_temp, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys Conductivity: %s%s", COLOR_WHITE, dtostrf(environment->analisys.conductivity, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys Turbidity: %s%s", COLOR_WHITE, dtostrf(environment->analisys.turbidity, 8, 4, s1));
+#else
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Altitude: %s%.2f", COLOR_WHITE, environment->altitude);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Pressure: %s%.2f", COLOR_WHITE, environment->pressure);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Temperature Gy: %s%.2f", COLOR_WHITE, environment->temperaturegy);
@@ -40,6 +83,7 @@ void protocol_print_environment(Environment *environment) {
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys ORP Temp: %s%.2f", COLOR_WHITE, environment->analisys.orp_temp);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys Conductivity: %s%.2f", COLOR_WHITE, environment->analisys.conductivity);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys Turbidity: %s%.2f", COLOR_WHITE, environment->analisys.turbidity);
+#endif
 }
 
 void protocol_print_userrequest(UserRequest *userrequest) {
@@ -82,6 +126,19 @@ void protocol_package_print(AlioliProtocol *package) {
 }
 #endif
 
+uint16_t protocol_kind_size(uint8_t kind) {
+    if (kind == ALIOLI_PROTOCOL_KIND_HEARTBEAT) {
+        return sizeof(HeartBeat);
+    } else if (kind == ALIOLI_PROTOCOL_KIND_ENVIRONMENT) {
+        return sizeof(Environment);
+    } else if (kind == ALIOLI_PROTOCOL_KIND_USERREQUEST) {
+        return sizeof(UserRequest);
+    } else {
+        // Programming error, missing kind here!
+        return 0;
+    }
+}
+
 // Pack an Alioli Package to be sent
 unsigned short int protocol_pack(AlioliProtocol *package, char **answer, size_t *answer_size, size_t *answer_allocated) {
     size_t temp_answer_size=0, until_payload=0, expected=*answer_size + package->payload_size + ALIOLI_PROTOCOL_SIZE_BASE;
@@ -94,20 +151,15 @@ unsigned short int protocol_pack(AlioliProtocol *package, char **answer, size_t 
     if (*answer) {
 
         // Header + Kind + Payload Size
-        print_ashex(*answer, *answer_size, stdout);
         strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->header), ALIOLI_PROTOCOL_SIZE_HEADER, __FILE__, __LINE__);
-        print_ashex(*answer, *answer_size, stdout);
         strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->counter), ALIOLI_PROTOCOL_SIZE_COUNTER, __FILE__, __LINE__);
-        print_ashex(*answer, *answer_size, stdout);
         strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->kind), ALIOLI_PROTOCOL_SIZE_KIND, __FILE__, __LINE__);
-        print_ashex(*answer, *answer_size, stdout);
         strcat_realloc(answer, answer_size, answer_allocated, (char*) &(package->payload_size), ALIOLI_PROTOCOL_SIZE_PAYLOAD_SIZE, __FILE__, __LINE__);
-        print_ashex(*answer, *answer_size, stdout);
+
         // Payload
         until_payload = *answer_size;
         if (package->payload_size) {
             strcat_realloc(answer, answer_size, answer_allocated, (char*) package->payload, package->payload_size, __FILE__, __LINE__);
-            print_ashex(*answer, *answer_size, stdout);
         }
         temp_answer_size = *answer_size;
 
@@ -116,10 +168,11 @@ unsigned short int protocol_pack(AlioliProtocol *package, char **answer, size_t 
         strcat_realloc(answer, &temp_answer_size, answer_allocated, (char*) &(package->kind), 1, __FILE__, __LINE__);
 
         // Calculate CRC
-        print_ashex(*answer, temp_answer_size, stdout);
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
         print_debug("PACK", stdout, CPURPLE, 0, "PACK-CRC8 - Counter: %u - Payload: %u", package->counter, package->payload_size);
         print_ashex(*answer, temp_answer_size, stdout);
         print_ashex(*answer + until_payload, temp_answer_size-until_payload, stdout);
+#endif
         package->crc = CRC8((byte*) (*answer + until_payload), temp_answer_size-until_payload);
 
         // CRC (overwrite the last bytes from the string)
@@ -139,72 +192,75 @@ unsigned short int protocol_pack(AlioliProtocol *package, char **answer, size_t 
 
     }
 
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
     print_debug("PACK", stdout, CBLUE, 0, "PACK: Counter: %u - Kind: %u - Payload: %u", package->counter, package->kind, package->payload_size);
     print_ashex((const char*) *answer, *answer_size, stdout);
-    // protocol_package_print(package);
+#endif
+#if ALIOLI_PROTOCOL_DEBUG
+    protocol_package_print(package);
+#endif
 
     return 1;
 }
 
 
 // Pack structures to bytes
-unsigned short int protocol_new_package(uint8_t counter, uint8_t kind, uint16_t payload_size, byte *payload, char **answer, size_t *answer_size, size_t *answer_allocated) {
+unsigned short int protocol_new_package(uint8_t counter, uint8_t kind, byte *payload, char **answer, size_t *answer_size, size_t *answer_allocated) {
     AlioliProtocol package;
     package.header = ALIOLI_PROTOCOL_MAGIC_HEADER;
     package.counter = counter;
     package.kind = kind;
-    package.payload_size = payload_size;
+    package.payload_size = protocol_kind_size(kind);
     package.payload = payload;
     package.crc = 0;
     return protocol_pack(&package, answer, answer_size, answer_allocated);
 }
 unsigned short int protocol_pack_heartbeat(HeartBeat *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated) {
-    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_HEARTBEAT, sizeof(HeartBeat), (byte*) &data, answer, answer_size, answer_allocated);
+    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_HEARTBEAT, (byte*) data, answer, answer_size, answer_allocated);
 }
 unsigned short int protocol_pack_environment(Environment *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated) {
-    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_ENVIRONMENT, sizeof(Environment), (byte*) data, answer, answer_size, answer_allocated);
+    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_ENVIRONMENT, (byte*) data, answer, answer_size, answer_allocated);
 }
 unsigned short int protocol_pack_userrequest(UserRequest *data, uint8_t counter, char **answer, size_t *answer_size, size_t *answer_allocated) {
-    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_USERREQUEST, sizeof(UserRequest), (byte*) data, answer, answer_size, answer_allocated);
+    return protocol_new_package(counter, ALIOLI_PROTOCOL_KIND_USERREQUEST, (byte*) data, answer, answer_size, answer_allocated);
 }
 
 
 // Pack structures to bytes
 unsigned short int protocol_unpack(AlioliProtocol *package, byte *data, uint8_t kind) {
-    uint16_t dsize=0;
-    if (package->kind==kind) {
-        if (
-                  (package->kind == ALIOLI_PROTOCOL_KIND_HEARTBEAT)
-            )  {
-            dsize = sizeof(HeartBeat);
-        } else if (
-                  (package->kind == ALIOLI_PROTOCOL_KIND_ENVIRONMENT)
-            ) {
-            dsize = sizeof(Environment);
-        } else if (
-                  (package->kind == ALIOLI_PROTOCOL_KIND_USERREQUEST)
-            ) {
-            dsize = sizeof(UserRequest);
-        } else {
-            // Programming error, missing kind here!
-            return 0;
-        }
+    uint16_t dsize=protocol_kind_size(kind);
+    if (dsize) {
+        if (package->kind==kind) {
 
-        // Dump payload on object
-        if (package->payload_size==dsize) {
-            if (dsize) {
-                memcpy(data, package->payload, package->payload_size);
+            // Dump payload on object
+            if (package->payload_size==dsize) {
+                if (dsize) {
+                    memcpy(data, package->payload, package->payload_size);
+                }
+                return 1;
+            } else {
+#if OPTIMIZE
+                Serial.println(F("Package payload size differs from function calculated size"));
+#else
+                print_debug(CPROTOCOL, stderr, CRED, 0, "Payload Size:%u != %u:size - Kind was: %u", package->payload_size, dsize, kind);
+#endif
             }
-            return 1;
         } else {
-            print_debug(CPROTOCOL, stderr, CRED, 0, "Payload Size:%u != %u:size - Kind was: %u", package->payload_size, dsize, kind);
-            return 0;
+            // Different kind of package
+#if OPTIMIZE
+            Serial.println(F("Package kind differs from function kind"));
+#else
+            print_debug(CPROTOCOL, stderr, CRED, 0, "Package Kind: %u!=%u Function Kind", package->kind, kind);
+#endif
         }
     } else {
-        // Different kind of package
-        print_debug(CPROTOCOL, stderr, CRED, 0, "Package Kind: %u!=%u Function Kind", package->kind, kind);
-        return 0;
+#if OPTIMIZE
+        Serial.println(F("Payload size: not found, unknown kind"));
+#else
+        print_debug(CPROTOCOL, stderr, CRED, 0, "Payload size: not found, unknow package kind %u", kind);
+#endif
     }
+    return 0;
 }
 unsigned short int protocol_unpack_heartbeat(AlioliProtocol *package, HeartBeat *data) {
     return protocol_unpack(package, (byte*) data, ALIOLI_PROTOCOL_KIND_HEARTBEAT);
@@ -268,7 +324,11 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
     uint16_t version = ALIOLI_PROTOCOL_MAGIC_HEADER;
     unsigned short int done=0;
 
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
     print_debug("PARSE_CHAR", stdout, CCYAN, 0, "Total: %u - Status: %d - Char: %02X", status->total, status->status, element);
+#endif
+
+    // Prase
     if (
               (status->total==ALIOLI_PROTOCOL_READING_NODATA)
            && (status->status==ALIOLI_PROTOCOL_READING_NODATA)
@@ -299,8 +359,10 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
 
         // Copy data
         memcpy((&(package->counter)), &element, 1);
-        print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Counter: %u", package->counter);
         status->total++;
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
+        print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Counter: %u", package->counter);
+#endif
 
         // Update status
         status->status++;
@@ -310,7 +372,9 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         // Copy data
         memcpy(&(package->kind), &element, 1);
         status->total++;
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
         print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Kind: %u", package->kind);
+#endif
 
         // Update status
         status->status++;
@@ -335,7 +399,9 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
 
             // Extra byte is for CRC verification purpose +1 byte for kind on CRC8 calculus
             package->payload = (byte*) calloc(package->payload_size+2, sizeof(byte));
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
             print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Payload: %u", package->payload_size);
+#endif
 
             // Update status
             status->status++;
@@ -352,7 +418,9 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         // Copy data
         memcpy((package->payload)+(status->total)-ALIOLI_PROTOCOL_READING_PAYLOAD, &element, 1);
         status->total++;
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
         print_ashex((char*) package->payload, status->total-ALIOLI_PROTOCOL_READING_PAYLOAD, stdout);
+#endif
 
         // Update status if we got all expected bytes
         if (((status->total)-ALIOLI_PROTOCOL_READING_PAYLOAD) == (package->payload_size)) {
@@ -370,9 +438,11 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         memcpy(package->payload + package->payload_size + 1, &(package->kind), 1);
 
         // Create CRC
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
         print_debug("PARSE_CHAR", stdout, CYELLOW, 0, "Total: %u - Payload: %u", status->total, package->payload_size);
         print_debug("PARSE_CHAR", stdout, CPURPLE, 0, "PARSE-CRC8 - Counter: %u - Payload: %u", package->counter, package->payload_size);
         print_ashex((char*) package->payload, package->payload_size+2, stdout);
+#endif
         crc = CRC8((const byte *) package->payload, package->payload_size+2);
 
         // Verify CRC
@@ -423,7 +493,9 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
         status->total = 0;
     }
 
+#if ALIOLI_PROTOCOL_DEBUG_DEEP
     print_debug("PARSE_CHAR", stdout, CWHITE, 0, "status:%u - return: %u - kind: %u - payload: %u\n", status->status, done, package->kind, package->payload_size);
+#endif
 
     // Return if we finished a package
     return done;

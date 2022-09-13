@@ -10,6 +10,7 @@ struct TBuoy {
     unsigned short int acelerometer_newdata;
     Environment environment;
     UserRequest userrequest;
+    unsigned short int environment_newdata;
 };
 typedef struct TBuoy Buoy;
 

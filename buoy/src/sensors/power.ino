@@ -52,10 +52,11 @@ void power_setup(long int now) {
         // Close in a loop just in case (but lights_error is already a closed bucle)
         while (1) {
 #if OPTIMIZE
-            lights_error(NULL, __FILE__, __LINE__);
+            Serial.println(F("POWER: Couldn't find a valid INA219 sensor, we will keep going with NO POWER SENSOR!"));
 #else
-            lights_error("Could not find a valid INA219 sensor, we won't continue!", __FILE__, __LINE__);
+            print_debug(POWER_SETUP, stdout, CPURPLE, 0, "Could not find a valid INA219 sensor, we will keep going with NO POWER SENSOR!");
 #endif
+            delay(1000);
         }
 #else
 #if DEBUG_SENSORS
@@ -69,8 +70,8 @@ void power_setup(long int now) {
     }
 
     // Set environment
-    rov.environment.voltage = 0.0;
-    rov.environment.amperage = 0.0;
+    buoy.environment.voltage = 0.0;
+    buoy.environment.amperage = 0.0;
 
     // Set local config
     power_config.nextevent=0;
@@ -87,10 +88,6 @@ void power_setup(long int now) {
 
 void power_loop(long int now) {
     float voltage=0.0, amperage=0.0;
-
-#if DEBUG_SENSORS_POWER
-    char s1[20]="", s2[20]="";
-#endif
 
     // Check power lookup
     if (power_config.nextevent<now) {
@@ -122,6 +119,14 @@ void power_loop(long int now) {
         Serial.print(F("Power:         ")); Serial.print(power_mW); Serial.println(F(" mW"));
         Serial.println("");
 #endif
+
+        // Save temperature
+        buoy.environment.voltage = voltage;
+        buoy.environment.amperage = amperage;
+    }
+
+}
+
 
         /*
 
@@ -162,21 +167,4 @@ Power:         720.00 mW
 ...
            */
 
-        // Save temperature
-        rov.environment.voltage = voltage;
-        rov.environment.amperage = amperage;
 
-        /*
-#if DEBUG_SENSORS
-#if DEBUG_SENSORS_POWER
-#if OPTIMIZE
-        Serial.print(F("POWER: INI"));
-#else
-        print_debug(POWER_LOOP, stdout, CYELLOW, COLOR_NORMAL, "Temperature 1: %sºC - Temperature 2: %sºC", dtostrf(temperature1, 8, 4, s1), dtostrf(temperature2, 8, 4, s2));
-#endif
-#endif
-#endif
-        */
-    }
-
-}
