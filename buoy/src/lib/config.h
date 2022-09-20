@@ -6,7 +6,6 @@
 // General config
 #define QUICK_START 0
 #define RTC 1
-#define VERIFY_REMOTE_SERVER_ANSWER 1
 #define DUMMY_GPS 1
 #define OPTIMIZE 0
 
@@ -57,11 +56,11 @@
 #define SERIAL2_TX_PIN 8            // Serial 2 pin for control the status of the module
 #define SERIAL2_RX_PIN 9            // Serial 2 pin for control the status of the module
 #define SERIAL2_CTRLPIN 3           // Serial 2 pin for control the status of the module
-#define TRANSMISSION_MS 1
+#define TRANSMISSION_MS 0
 #define TRANSMISSION_GPS_MS 10000
 #define TRANSMISSION_OURIP_MS 50000
 #define TRANSMISSION_WEBSERVER_MS 60000
-#define TRANSMISSION_PING_ROV_MS 10000
+#define TRANSMISSION_PING_ROV_MS 1000
 #define MODEM_SERIAL 1
 #define RS485_SERIAL 2
 #define MODEM_PIN 2002

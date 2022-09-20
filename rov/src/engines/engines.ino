@@ -216,7 +216,7 @@ void engine_move(const char* name, unsigned short int target) {
     }
 
 
-
+/*
 #if DEBUG_ENGINES
         print_debug(ES, stdout, CCYAN, COLOR_NORMAL, "    %s - Turn side 1", engine->name);
 #endif
@@ -237,7 +237,7 @@ void engine_move(const char* name, unsigned short int target) {
 
         // Motor no gira
         digitalWrite (engine->pin_dir, LOW); 
-
+*/
 
 
 
@@ -252,4 +252,27 @@ void engines_loop(long int now) {
 #if DEBUG_ENGINES
     // print_debug("ENGINES-LOOP", stdout, CYELLOW, COLOR_NORMAL, "Engine");
 #endif
+    // Pad 1 (Z: -1:down +1:up   R: -1:left +1:right)
+    if (rov.userrequest.z>0) {
+        engine_move("ENGINES", ROVER_MOVE_FORWARD);
+    } else if (rov.userrequest.z<0) {
+        engine_move("ENGINES", ROVER_MOVE_BACKWARD);
+    } else if (rov.userrequest.r<0) {
+        engine_move("ENGINES", ROVER_LOOK_LEFT);
+    } else if (rov.userrequest.r>0) {
+        engine_move("ENGINES", ROVER_LOOK_RIGHT);
+
+    // Pad 2 (X: -1:down +1:up   Y: -1:left +1:right)
+    } else if (rov.userrequest.x>0) {
+        engine_move("ENGINES", ROVER_MOVE_UP);
+    } else if (rov.userrequest.x<0) {
+        engine_move("ENGINES", ROVER_MOVE_DOWN);
+    } else if (rov.userrequest.y<0) {
+        engine_move("ENGINES", ROVER_MOVE_LEFT);
+    } else if (rov.userrequest.y>0) {
+        engine_move("ENGINES", ROVER_MOVE_RIGHT);
+    } else {
+        // If no movement, stop
+        engine_move("ENGINES", ROVER_MOVE_STOP);
+    }
 }

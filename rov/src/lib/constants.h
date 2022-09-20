@@ -4,8 +4,8 @@
 #define SYSNAME "Rov"
 #define VERSION "1.0"
 
-#define TIMEOUT_RS485_MS 500
-#define TRANSFER_RS485_WAIT_MS 500
+#define TIMEOUT_RS485_MS 0
+#define TRANSFER_RS485_WAIT_MS 0
 
 #define MAVLINK_SYSID 1
 #define MAVLINK_COMPID 2

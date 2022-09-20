@@ -18,6 +18,41 @@ void communication_reset() {
     communication_config.mavlink_buf_size = 0;
     communication_config.alioli_protocol_buf_size = 0;
 }
+
+int16_t communication_filter_pad(int16_t oldvalue, int16_t newvalue, int16_t total_gears, int16_t *gears_reference, int16_t *gears, unsigned short int *updated) {
+    int16_t index=0, distance=0, lastdistance=0, choosen=0;
+
+    for (index=0; index<=total_gears; index++) {
+
+        // Calculate distance
+        distance = abs(newvalue-gears_reference[index]);
+
+        if (index>0) {
+
+            // For the rest of elements
+            if (distance>=lastdistance) {
+                choosen = index-1;
+                break;
+            } else {
+                choosen = index;
+                lastdistance = distance;
+            }
+
+        } else {
+
+            // The first element is just accepted
+            lastdistance = distance;
+        }
+    }
+
+    // Activate updated if some change detected
+    if (gears[choosen]!=oldvalue) {
+        (*updated) = 1;
+    }
+
+    return gears[choosen];
+}
+
 unsigned short int mavlink_msgcat(char **answer, unsigned int *answer_size, unsigned int *answer_allocated, mavlink_message_t *msg) {
     char temp[MAVLINK_MAX_PAYLOAD_LEN]={0};
     int len=0;
@@ -25,12 +60,16 @@ unsigned short int mavlink_msgcat(char **answer, unsigned int *answer_size, unsi
     return strcat_realloc(answer, answer_size, answer_allocated, temp, len, __FILE__, __LINE__);
 }
 
+#define CTOTAL_GEARS 3
 unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *buf_allocated, char **answer, unsigned int *answer_size, unsigned int *answer_allocated) {
     // int len=0;
     // unsigned short int bypass=0;
     int chan = MAVLINK_COMM_0;
-    unsigned short int gotmsg=0;
+    unsigned short int gotmsg=0, updated=0;
     unsigned int buf_idx=0;
+    int16_t gears_reference_1000[CTOTAL_GEARS] = {-1000, 0, 1000};
+    int16_t gears_reference_500[CTOTAL_GEARS] = {0, 500, 1000};
+    int16_t gears[CTOTAL_GEARS] = {-1, 0, 1};
 #ifdef ARDUINO_ARCH_AVR
     char s1[20]="", s2[20]="", s3[20]="";
 #endif
@@ -38,6 +77,7 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
     // Put all together
     if (*buf_size) {
         strcat_realloc(&communication_config.mavlink_buf, &communication_config.mavlink_buf_size, &communication_config.mavlink_buf_allocated, *buf, *buf_size, __FILE__, __LINE__);
+        (*buf_size) = 0;
     }
     // print_ashex(communication_config.mavlink_buf, communication_config.mavlink_buf_size, stderr);
 
@@ -164,10 +204,13 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         mavlink_manual_control_t man;
                         mavlink_msg_manual_control_decode(&(communication_config.mavlink_msg), &man);
                         // print_debug(CMAVLINK, stdout, CWHITE, 0, "MANUAL_CONTROL: (%d, %d, %d, %d) - B:(%d, %d) EXT:%d", man.x, man.y, man.z, man.r, man.buttons, man.buttons2, man.enabled_extensions);
-                        buoy.userrequest.x = man.x;
-                        buoy.userrequest.y = man.y;
-                        buoy.userrequest.z = man.z;
-                        buoy.userrequest.r = man.r;
+
+                        // Save changes normalized
+                        updated = 0;
+                        buoy.userrequest.x = communication_filter_pad(buoy.userrequest.x, man.x, CTOTAL_GEARS, gears_reference_1000, gears, &updated);  // Pad 2: (down, up)    => (-1000, +1000)
+                        buoy.userrequest.y = communication_filter_pad(buoy.userrequest.y, man.y, CTOTAL_GEARS, gears_reference_1000, gears, &updated);  // Pad 2: (left, right) => (-1000, +1000)
+                        buoy.userrequest.z = communication_filter_pad(buoy.userrequest.z, man.z, CTOTAL_GEARS, gears_reference_500, gears, &updated);   // Pad 1: (down, up)    => (    0, +1000)
+                        buoy.userrequest.r = communication_filter_pad(buoy.userrequest.r, man.r, CTOTAL_GEARS, gears_reference_1000, gears, &updated);  // Pad 1: (left, right) => (-1000, +1000)
                         buoy.userrequest.buttons1 = man.buttons;
                         buoy.userrequest.buttons2 = man.buttons2;
                         if (man.enabled_extensions & 1) {
@@ -179,6 +222,21 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                             buoy.userrequest.roll = man.t;
                         } else {
                             buoy.userrequest.roll = 0;
+                        }
+
+                        print_debug(CMAVLINK, stdout, CWHITE, 0, "MANUAL_CONTROL: (%d, %d, %d, %d) - B:(%d, %d) EXT:%d  ===>  (%d, %d, %d, %d) -B:(%d, %d) PR:(%d, %d)  :: Updated: %d", man.x, man.y, man.z, man.r, man.buttons, man.buttons2, man.enabled_extensions, buoy.userrequest.x, buoy.userrequest.y, buoy.userrequest.z, buoy.userrequest.r, buoy.userrequest.buttons1, buoy.userrequest.buttons2, buoy.userrequest.pitch, buoy.userrequest.roll, updated);
+
+                        // Send message to the ROV if the data is not passive
+                        if (updated) {
+
+                            // Pack
+                            protocol_pack_userrequest(&buoy.userrequest, protocol_counter, buf, buf_size, buf_allocated);
+                            if (protocol_counter==255) {
+                                protocol_counter = 1;
+                            } else {
+                                protocol_counter++;
+                            }
+
                         }
                     }
                     break;

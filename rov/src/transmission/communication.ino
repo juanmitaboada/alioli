@@ -88,6 +88,15 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         // Unpack
                         if (protocol_unpack_userrequest(&communication_config.alioli_protocol_msg, &rov.userrequest)) {
 
+                            Serial.print(F("UserRequest: X="));
+                            Serial.print(rov.userrequest.x);
+                            Serial.print(F(", Y="));
+                            Serial.print(rov.userrequest.y);
+                            Serial.print(F(", Z="));
+                            Serial.print(rov.userrequest.z);
+                            Serial.print(F(", R="));
+                            Serial.print(rov.userrequest.r);
+                            Serial.println();
 
                             // Got a valid userrequest
 #if DEBUG_COMMUNICATION

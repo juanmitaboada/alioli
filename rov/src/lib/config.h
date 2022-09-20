@@ -128,7 +128,7 @@
 // Valid speed (baud rates): 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 31250, 38400, 57600 and 115200
 #define SERIAL1_SPEED 115200
 #define SERIAL1_CTRLPIN 4     // Serial 1 pin for control the status of the module
-#define TRANSMISSION_MS 100
+#define TRANSMISSION_MS 0
 #define RS485_SERIAL 1
 
 #endif

@@ -67,10 +67,10 @@ typedef struct THeartBeat {
 // === Control ===
 
 typedef struct TUserRequest {
-    int16_t x;                   // X-axis [-1000, +1000]
-    int16_t y;                   // Y-axis [-1000, +1000]
-    int16_t z;                   // Z-axis [-1000, +1000]
-    int16_t r;                   // R-axis [-1000, +1000]
+    int16_t x;                   // X-axis  PS4 Pad 2   (down, up)      =>  (-1000, +1000)
+    int16_t y;                   // Y-axis  PS4 Pad 2   (left, right)   =>  (-1000, +1000)
+    int16_t z;                   // Z-axis  PS4 Pad 1   (down, up)      =>  (    0, +1000)
+    int16_t r;                   // R-axis  PS4 Pad 1   (left, right)   =>  (-1000, +1000)
     uint16_t buttons1;          // Buttons 1 :: Bits [but15, but14, ..., but1]
     uint16_t buttons2;          // Buttons 2 :: Bits [but31, but30, ..., but16]
     int8_t protocol_alignment_1;

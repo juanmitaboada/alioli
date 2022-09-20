@@ -809,9 +809,9 @@ void transmission_loop(long int now) {
 #if DEBUG_TRANSMISSION
                         print_debug("TRl", stdout, CCYAN, 0, "LINK OPEN");
 #endif
-                        buf_size = 0;
                         transmission_config.modem_linked = 1;
                         communication_reset();
+                        buf_size = 0;
 
                     // CLOSED msg
                     } else if (
@@ -822,9 +822,9 @@ void transmission_loop(long int now) {
 #if DEBUG_TRANSMISSION
                         print_debug("TRl", stdout, CBLUE, 0, "LINK CLOSED");
 #endif
-                        buf_size = 0;
                         transmission_config.modem_linked = 0;
                         communication_reset();
+                        buf_size = 0;
 
                     // CMTI message (there is a message waiting)
                     } else if (
@@ -837,6 +837,7 @@ void transmission_loop(long int now) {
 #if DEBUG_TRANSMISSION
                         print_debug("TRl", stdout, CBLUE, 0, "SMS waiting");
 #endif
+                        buf_size = 0;
 
 /*
                     // This message is outdated (use onlye with ModemSimul)
@@ -855,6 +856,7 @@ void transmission_loop(long int now) {
                         strcat_realloc(&answer, &answer_size, &answer_allocated, "PONG\n", 5, __FILE__, __LINE__);
                         transmission_config.modem_linked = 0;
                         communication_reset();
+                        buf_size = 0;
 */
 
                     // MAVLINK msg
@@ -877,6 +879,7 @@ void transmission_loop(long int now) {
                                 modem_error = 1;
                             }
                         }
+                        buf_size = 0;
                     }
 
                 // No data in the BUS, check if there is work to do
@@ -970,8 +973,8 @@ void transmission_loop(long int now) {
 
                     }
 
+                    buf_size = 0;
                 }
-                buf_size = 0;
             }
 
 #endif

@@ -51,7 +51,7 @@ void setup() {
 
     // Header
     Serial.begin(115200);
-    Serial.println(F("Starting bootloader... (if stuck here is because the CLOCK is not available!)"));
+    Serial.println(F("Starting bootloader..."));
 
     // Protocol alignment test
     protocol_alignment_test();
