@@ -7,3 +7,6 @@ doc
 mavlink
 modemsimul
 examples
+video_streaming/rtsp-simple-server
+video_streaming/rtsp-simple-server_v0.20.0_linux_amd64.tar.gz
+video_streaming/rtsp-simple-server.yml

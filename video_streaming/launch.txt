@@ -1,0 +1,2 @@
+rtspServer=127.0.0.1:rtsp://127.0.0.1:8554/webCamStream ./rtsp-simple-server
+sudo ffmpeg -f v4l2 -framerate 24 -video_size 480x480 -i /dev/video0 -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/webCamStream
