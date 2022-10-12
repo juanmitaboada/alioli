@@ -131,6 +131,37 @@ void osd_loop(long int now) {
         answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
 
+        // RADIO Status
+        mavlink_msg_rc_channels_pack(
+            mavlink_system.sysid,
+            mavlink_system.compid,
+            &mavlink_msg,
+            millis(),   // Time since system boot (millis)
+            0,          // Total number of RC channels being received
+            0,          // Channel 1 value
+            0,          // Channel 2 value
+            0,          // Channel 3 value
+            0,          // Channel 4 value
+            0,          // Channel 5 value
+            0,          // Channel 6 value
+            0,          // Channel 7 value
+            0,          // Channel 8 value
+            0,          // Channel 9 value
+            0,          // Channel 10 value
+            0,          // Channel 11 value
+            0,          // Channel 12 value
+            0,          // Channel 13 value
+            0,          // Channel 14 value
+            0,          // Channel 15 value
+            0,          // Channel 16 value
+            0,          // Channel 17 value
+            0,          // Channel 18 value
+            254         // RSSI: Received signal strength [0-254], UINT8_MAX: invalid/unknown
+        );
+        answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
+        serial_send(OSD_SERIAL, answer, answer_size);
+
+
 #if DEBUG_OSD
         print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d - (r:%d, p:%d, y:%d)", (int) battery_percent(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw);
 #endif
