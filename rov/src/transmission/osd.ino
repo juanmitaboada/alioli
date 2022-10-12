@@ -13,13 +13,6 @@ mavlink_system_t mavlink_system = {
 
 const char *OSD="OSD";
 
-unsigned short int mavlink_msgcat(char **answer, unsigned int *answer_size, unsigned int *answer_allocated, mavlink_message_t *msg) {
-    char temp[MAVLINK_MAX_PAYLOAD_LEN]={0};
-    int len=0;
-    len = mavlink_msg_to_send_buffer((uint8_t*) temp, msg);
-    return strcat_realloc(answer, answer_size, answer_allocated, temp, len, __FILE__, __LINE__);
-}
-
 // === SETUP === ===============================================================================
 void osd_setup(long int now) {
 
@@ -43,13 +36,23 @@ void osd_setup(long int now) {
 #endif
 }
 
+int8_t battery_percent() {
+    int8_t i=0;
+    float voltages[] = BATTERY_VOLTAGES;
+    for (i=10; i>0; i--) {
+        if (rov.environment.voltage>=voltages[i]) {
+            break;
+        }
+    }
+    return i*10;
+}
+
 // === LOOP === ================================================================================
 
 void osd_loop(long int now) {
     mavlink_message_t mavlink_msg;
-    char fixed_answer[100]="";
-    char *answer=fixed_answer;
-    unsigned int answer_size=0, answer_allocated=100;
+    char answer[MAVLINK_MAX_PAYLOAD_LEN]={0};
+    unsigned int answer_size=0;
 
     // Check temperature lookup
     if (osd_config.nextevent<now) {
@@ -57,32 +60,79 @@ void osd_loop(long int now) {
         // Set next event
         osd_config.nextevent = now+OSD_LOOKUP_MS;
 
-        // STATUS
-        mavlink_msg_sys_status_pack(mavlink_system.sysid, mavlink_system.compid, &mavlink_msg, 0, 0, 0, 50, (uint16_t) (rov.environment.voltage*1000), (uint16_t) (rov.environment.amperage*100), 100, 0, 0, 0, 0, 0, 0);
-        mavlink_msgcat(&answer, &answer_size, &answer_allocated,                       &mavlink_msg);
+        // === HEARTBEAT ===
+        mavlink_msg_heartbeat_pack(
+            mavlink_system.sysid,
+            mavlink_system.compid,
+            &mavlink_msg,
+            MAV_TYPE_SUBMARINE,         // Type = Submarine
+            MAV_AUTOPILOT_INVALID,      // Autopilot = Invalid (not a flight controller)
+            MAV_MODE_GUIDED_ARMED,      // Base mode = Armed
+            0,                          // Custom mode = None
+            MAV_STATE_ACTIVE            // System status = Active
+        );
+        answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
-        answer_size = 0;
 
-        // Attach HEARTBEAT
-        mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid,         &mavlink_msg, MAV_TYPE_SUBMARINE, MAV_AUTOPILOT_INVALID, MAV_MODE_GUIDED_ARMED, 0, MAV_STATE_ACTIVE);
-        mavlink_msgcat(&answer, &answer_size, &answer_allocated,                       &mavlink_msg);
+        // === STATUS ===
+        mavlink_msg_sys_status_pack(
+            mavlink_system.sysid,
+            mavlink_system.compid,
+            &mavlink_msg,
+            0,              // Sensors present
+            0,              // Sensors enabled
+            0,              // Sensors health
+            999,            // Load %
+            (uint16_t) (rov.environment.voltage*1000),  // Battery voltage (mV)
+            (uint16_t) rov.environment.amperage,        // Battery current (cA)
+            battery_percent(),                          // Battery remaining (%)
+            0,              // Communication drop rate (UART, I2C, SPI, CAN)
+            0,              // Communication errors (UART, I2C, SPI, CAN)
+            0,              // Errors count 1
+            0,              // Errors count 2
+            0,              // Errors count 3
+            0               // Errors count 4
+        );
+        answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
-        answer_size = 0;
 
-        // Attach BATTERY STATUS
-        mavlink_msg_battery_status_pack(mavlink_system.sysid, mavlink_system.compid, &(mavlink_msg), 1, MAV_BATTERY_FUNCTION_ALL, MAV_BATTERY_TYPE_UNKNOWN, 20, (uint16_t) (rov.environment.voltage*1000), (uint16_t) rov.environment.amperage, 1, 1, 55);
-        mavlink_msgcat(&answer, &answer_size, &answer_allocated,                       &mavlink_msg);
+        // === ATTITUDE ===
+        mavlink_msg_attitude_pack(
+            mavlink_system.sysid,
+            mavlink_system.compid,
+            &mavlink_msg,
+            millis(),       // Time since system boot (millis)
+            rov.environment.acelerometer.roll,  // ROLL angle [rad] (-pi..+pi)
+            rov.environment.acelerometer.pitch, // PITCH angle [rad] (-pi..+pi)
+            rov.environment.acelerometer.yaw,   // YAW angle [rad] (-pi..+pi)
+            0.0,                                // ROLL angular speed [rad/s]
+            0.0,                                // PITCH angular speed [rad/s]
+            0.0                                 // YAW angular speed [rad/s]
+        );
+        answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
-        answer_size = 0;
 
-        // Attach ATTITUDE
-        mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &mavlink_msg, millis(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw, 0.0, 0.0, 0.0);
-        mavlink_msgcat(&answer, &answer_size, &answer_allocated,                       &mavlink_msg);
+        // GPS Status to remove "LOW SATS" message
+        mavlink_msg_gps_raw_int_pack(
+            mavlink_system.sysid,
+            mavlink_system.compid,
+            &mavlink_msg,
+            GPS_FIX_TYPE_NO_GPS,    // GPS fixed type
+            0,                      // Timestamp [us]
+            0,                      // Latitude [degE7]
+            0,                      // Longitude [degE7]
+            0,                      // Altitude [mm]
+            UINT16_MAX,             // EPH
+            UINT16_MAX,             // EPV
+            0,                      // GPS ground speed [cm/s]
+            UINT16_MAX,             // Course over ground speed [cdeg]
+            20                      // Number of satellites visible
+        );
+        answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
-        answer_size = 0;
 
 #if DEBUG_OSD
-        print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "OSD: %umV %uA - (r: %d, p:%d, y:%d)", (uint16_t) (rov.environment.voltage*1000), rov.environment.amperage, rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw);
+        print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d - (r:%d, p:%d, y:%d)", (int) battery_percent(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw);
 #endif
     }
 

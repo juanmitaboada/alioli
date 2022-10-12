@@ -116,6 +116,9 @@ void gyroscope_setup(long int now) {
     rov.environment.acelerometer.roll = 0.0;
     rov.environment.acelerometer.pitch = 0.0;
     rov.environment.acelerometer.yaw = 0.0;
+    rov.environment.acelerometer.roll_speed = 0.0;
+    rov.environment.acelerometer.pitch_speed = 0.0;
+    rov.environment.acelerometer.yaw_speed = 0.0;
     rov.environment_newdata = 1;
 #if DEBUG_SENSORS
 #if OPTIMIZE

@@ -86,7 +86,6 @@ void power_setup(long int now) {
 // === LOOP === ================================================================================
 
 void power_loop(long int now) {
-    float voltage=0.0, amperage=0.0;
 
 #if DEBUG_SENSORS_POWER
     char s1[20]="", s2[20]="";
@@ -99,8 +98,9 @@ void power_loop(long int now) {
         power_config.nextevent = now+POWER_LOOKUP_MS;
 
         // Get power
-        voltage =  ina219.getBusVoltage_V()+ ( ina219.getShuntVoltage_mV() / 1000);
-        amperage = ina219.getCurrent_mA();
+        rov.environment.voltage = ina219.getBusVoltage_V()+ ( ina219.getShuntVoltage_mV() / 1000);
+        rov.environment.amperage = ina219.getCurrent_mA();
+
 
 #if DEBUG_SENSORS_POWER
         float shuntvoltage = 0;
@@ -161,10 +161,6 @@ Power:         720.00 mW
 
 ...
            */
-
-        // Save temperature
-        rov.environment.voltage = voltage;
-        rov.environment.amperage = amperage;
 
         /*
 #if DEBUG_SENSORS

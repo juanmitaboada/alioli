@@ -106,9 +106,12 @@ typedef struct TAcelerometer {
     // int GyX;
     // int GyY;
     // int GyZ;
-    float roll;     // Roll
-    float pitch;    // Pitch
-    float yaw;      // Heading or Yaw
+    float roll;         // Roll [rad] (-pi..+pi)
+    float pitch;        // Pitch [rad] (-pi..+pi)
+    float yaw;          // Heading or Yaw [rad] (-pi..+pi)
+    float roll_speed;   // Roll angular speed [rad/s]
+    float pitch_speed;  // Pitch angular speed [rad/s]
+    float yaw_speed;    // Heading or Yaw angular speed [rad/s]
 } Acelerometer;
 
 typedef struct TWaterAnalisys {
