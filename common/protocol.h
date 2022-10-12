@@ -106,6 +106,10 @@ typedef struct TAcelerometer {
     // int GyX;
     // int GyY;
     // int GyZ;
+    // float w;            // Quaternion 1, w
+    // float x;            // Quaternion 2, x
+    // float y;            // Quaternion 3, y
+    // float z;            // Quaternion 4, z
     float roll;         // Roll [rad] (-pi..+pi)
     float pitch;        // Pitch [rad] (-pi..+pi)
     float yaw;          // Heading or Yaw [rad] (-pi..+pi)

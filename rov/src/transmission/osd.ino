@@ -109,6 +109,21 @@ void osd_loop(long int now) {
             0.0,                                // PITCH angular speed [rad/s]
             0.0                                 // YAW angular speed [rad/s]
         );
+        /*
+        mavlink_msg_attitude_quaternion_pack(
+            mavlink_system.sysid,
+            mavlink_system.compid,
+            &mavlink_msg,
+            millis(),       // Time since system boot (millis)
+            rov.environment.acelerometer.w,     // Quaternion 1, w
+            rov.environment.acelerometer.x,     // Quaternion 2, x
+            rov.environment.acelerometer.y,     // Quaternion 3, y
+            rov.environment.acelerometer.z,     // Quaternion 4, z
+            0.0,                                // ROLL angular speed [rad/s]
+            0.0,                                // PITCH angular speed [rad/s]
+            0.0                                 // YAW angular speed [rad/s]
+        );
+        */
         answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
 

@@ -283,9 +283,16 @@ void protocol_setup_environment(Environment *environment) {
     environment->voltage=0.0;
     environment->amperage=0.0;
     environment->acelerometer.Tmp=0;
+    // environment->acelerometer.w=0;
+    // environment->acelerometer.x=0;
+    // environment->acelerometer.y=0;
+    // environment->acelerometer.z=0;
     environment->acelerometer.roll=0;
     environment->acelerometer.pitch=0;
     environment->acelerometer.yaw=0;
+    environment->acelerometer.roll_speed=0;
+    environment->acelerometer.pitch_speed=0;
+    environment->acelerometer.yaw_speed=0;
     environment->analisys.ph=0;
     environment->analisys.ph_temp=0;
     environment->analisys.orp=0;

@@ -113,6 +113,10 @@ void gyroscope_setup(long int now) {
     // Set environment
     rov.environment.temperaturegy = 0.0;
     rov.environment.acelerometer.Tmp = 0.0;
+    // rov.environment.acelerometer.w = 0.0;
+    // rov.environment.acelerometer.x = 0.0;
+    // rov.environment.acelerometer.y = 0.0;
+    // rov.environment.acelerometer.z = 0.0;
     rov.environment.acelerometer.roll = 0.0;
     rov.environment.acelerometer.pitch = 0.0;
     rov.environment.acelerometer.yaw = 0.0;
@@ -172,12 +176,47 @@ void gyroscope_loop(long int now) {
         }
 #endif
 
-        // Get BNO information
-        bno.getEvent(&event);
-        temp = bno.getTemp();
-
 #if DEBUG_SENSORS_GYROSCOPE
 
+        // Compass
+        // sensors_event_t event; 
+        bno.getEvent(&event, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+        double magX = -1000000, magY = -1000000 , magZ = -1000000;
+        magX = event.magnetic.x;
+        magY = event.magnetic.y;
+        magZ = event.magnetic.z;
+        double yaw = atan2(magY, magX) * 180/3.14159;
+        Serial.println(String(yaw, 3));
+
+        /*
+
+        // Euler (less acuarate)
+        imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+          
+        // Display the floating point data
+        Serial.print("X: ");
+        Serial.print(euler.x());
+        Serial.print(" Y: ");
+        Serial.print(euler.y());
+        Serial.print(" Z: ");
+        Serial.print(euler.z());
+        Serial.println("");
+
+        // Quaternions
+        imu::Quaternion quat = bno.getQuat();
+
+        // Display the quat data
+        Serial.print("qW: ");
+        Serial.print(quat.w(), 4);
+        Serial.print(" qX: ");
+        Serial.print(quat.y(), 4);
+        Serial.print(" qY: ");
+        Serial.print(quat.x(), 4);
+        Serial.print(" qZ: ");
+        Serial.print(quat.z(), 4);
+        Serial.println("");
+
+        // Normal
         Serial.print(F("Roll: "));
         Serial.print(event.orientation.roll, 4);
         Serial.print(F("\tPitch: "));
@@ -186,7 +225,6 @@ void gyroscope_loop(long int now) {
         Serial.print(event.orientation.heading, 4);
         Serial.print(F("\r\n"));
 
-        /*
         // Display the floating point data
         Serial.print(F("X: "));
         Serial.print(event.orientation.x, 4);
@@ -216,16 +254,32 @@ void gyroscope_loop(long int now) {
         Serial.println(F(" C"));
 #endif
 
-        // Save data in the main structure
+        // Temperature
+        temp = bno.getTemp();
         rov.environment.temperaturegy = temp;
         rov.environment.acelerometer.Tmp = temp;
-        rov.environment.acelerometer.roll = event.orientation.roll;
-        rov.environment.acelerometer.pitch = event.orientation.pitch;
-        rov.environment.acelerometer.yaw = event.orientation.heading;
+
+        // Quaternions
+        /*
+        imu::Quaternion quat = bno.getQuat();
+        rov.environment.acelerometer.w = quat.w();
+        rov.environment.acelerometer.x = quat.x();
+        rov.environment.acelerometer.y = quat.y();
+        rov.environment.acelerometer.z = quat.z();
+        */
+
+        // Gyroscope
+        bno.getEvent(&event);
+        rov.environment.acelerometer.roll = event.orientation.roll   * 3.141592654 / 180;
+        rov.environment.acelerometer.pitch = event.orientation.pitch * 3.141592654 / 180;
+        rov.environment.acelerometer.yaw = event.orientation.heading * 3.141692654 / 180;
+
+        // New data
         rov.environment_newdata = 1;
 
 #if DEBUG_SENSORS_GYROSCOPE
-        print_debug(GL, stdout, CYELLOW, 0, "Roll=%d Pitch:%d Yaw:%d Temp:%d", (int)rov.environment.acelerometer.roll, (int)rov.environment.acelerometer.pitch, (int)rov.environment.acelerometer.yaw, rov.environment.acelerometer.Tmp);
+        Serial.println(String(yaw, 3));
+        print_debug(GL, stdout, CYELLOW, 0, "Roll=%s Pitch:%s Yaw:%s Temp:%d", String(rov.environment.acelerometer.roll, 3).c_str(), String(rov.environment.acelerometer.pitch, 3).c_str(), String(rov.environment.acelerometer.yaw, 3).c_str(), rov.environment.acelerometer.Tmp);
 #endif
 
     }
