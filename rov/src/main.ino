@@ -40,6 +40,7 @@
 #include "monitor/monitor.ino"
 #include "transmission/communication.ino"
 #include "transmission/transmission.ino"
+#include "transmission/osd.ino"
 
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 13
@@ -171,7 +172,6 @@ void setup() {
 
 void loop() {
     unsigned long int now = millis();
-
 
 #if DEBUG_MAIN
     print_debug("MAIN", stdout, CCYAN, COLOR_NORMAL, "START");

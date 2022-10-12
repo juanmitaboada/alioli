@@ -22,6 +22,7 @@
 #define DEBUG_TRANSMISSION 0
 #define DEBUG_TRANSMISSION_MSG 0
 #define DEBUG_COMMUNICATION 0
+#define DEBUG_OSD 1
 
 // Lookups
 // #define PAD_LOOKUP_MS 500
@@ -32,6 +33,8 @@
 #define BRAIN_LOOKUP_MS 500
 #define ANALISYS_LOOKUP_MS 500
 #define BUOYANCY_LOOKUP_MS 500
+// #define OSD_LOOKUP_MS 5000
+#define OSD_LOOKUP_MS 500
 
 // PAD
 // #define PAD 0
@@ -71,11 +74,6 @@
 
 // Pressure
 #define PRESSURE_SENSOR_ADDRESS 0x76
-
-// Transmission
-// Valid speed (baud rates): 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 31250, 38400, 57600, and 115200
-#define SERIAL1_PINOUT 4            // Serial 1 digital pin connected to DE
-#define SERIAL1_SPEED 115200        // Serial 1 port speed or baud rates
 
 // Buoyancy position:
 //          ^           
@@ -126,9 +124,12 @@
 
 // Transmission
 // Valid speed (baud rates): 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 31250, 38400, 57600 and 115200
-#define SERIAL1_SPEED 115200
-#define SERIAL1_CTRLPIN 4     // Serial 1 pin for control the status of the module
+#define SERIAL1_PINOUT 4            // Serial 1 digital pin connected to DE
+#define SERIAL1_SPEED 115200        // Serial 1 port speed or baud rates
+#define SERIAL1_CTRLPIN 4           // Serial 1 pin for control the status of the module
+#define SERIAL2_SPEED 57600         // Serial 2 pin for control the MiniMicroOSD module
 #define TRANSMISSION_MS 0
 #define RS485_SERIAL 1
+#define OSD_SERIAL 2
 
 #endif

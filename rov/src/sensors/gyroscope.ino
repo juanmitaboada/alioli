@@ -113,9 +113,9 @@ void gyroscope_setup(long int now) {
     // Set environment
     rov.environment.temperaturegy = 0.0;
     rov.environment.acelerometer.Tmp = 0.0;
-    rov.environment.acelerometer.angx = 0.0;
-    rov.environment.acelerometer.angy = 0.0;
-    rov.environment.acelerometer.angz = 0.0;
+    rov.environment.acelerometer.roll = 0.0;
+    rov.environment.acelerometer.pitch = 0.0;
+    rov.environment.acelerometer.yaw = 0.0;
     rov.environment_newdata = 1;
 #if DEBUG_SENSORS
 #if OPTIMIZE
@@ -137,9 +137,7 @@ void gyroscope_loop(long int now) {
     Vector norm;
 #endif
     sensors_event_t event; 
-#if DEBUG_SENSORS_GYROSCOPE
     int8_t temp = 0;
-#endif
 
     // Check gyroscope lookup
     if (gyroscope_config.nextevent<now) {
@@ -173,9 +171,19 @@ void gyroscope_loop(long int now) {
 
         // Get BNO information
         bno.getEvent(&event);
+        temp = bno.getTemp();
 
 #if DEBUG_SENSORS_GYROSCOPE
-        temp = bno.getTemp();
+
+        Serial.print(F("Roll: "));
+        Serial.print(event.orientation.roll, 4);
+        Serial.print(F("\tPitch: "));
+        Serial.print(event.orientation.pitch, 4);
+        Serial.print(F("\tHeadding: "));
+        Serial.print(event.orientation.heading, 4);
+        Serial.print(F("\r\n"));
+
+        /*
         // Display the floating point data
         Serial.print(F("X: "));
         Serial.print(event.orientation.x, 4);
@@ -183,9 +191,38 @@ void gyroscope_loop(long int now) {
         Serial.print(event.orientation.y, 4);
         Serial.print(F("\tZ: "));
         Serial.print(event.orientation.z, 4);
+
+        Serial.print(F("Acc X (ROLL): "));
+        Serial.print(event.acceleration.x, 4);
+        Serial.print(F("\tAcc Y (PITCH): "));
+        Serial.print(event.acceleration.y, 4);
+        Serial.print(F("\tAcc Z (HEADING): "));
+        Serial.print(event.acceleration.z, 4);
+
+        imu::Vector<3> li_ac = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+        Serial.print(F("Li Acc X: "));
+        Serial.print(li_ac.x(), 4);
+        Serial.print(F("\tLi Acc Y: "));
+        Serial.print(li_ac.y(), 4);
+        Serial.print(F("\tLi Acc Z: "));
+        Serial.print(li_ac.z(), 4);
+        */
+
         Serial.print(F("\tCurrent Temperature: "));
         Serial.print(temp);
         Serial.println(F(" C"));
+#endif
+
+        // Save data in the main structure
+        rov.environment.temperaturegy = temp;
+        rov.environment.acelerometer.Tmp = temp;
+        rov.environment.acelerometer.roll = event.orientation.roll;
+        rov.environment.acelerometer.pitch = event.orientation.pitch;
+        rov.environment.acelerometer.yaw = event.orientation.heading;
+        rov.environment_newdata = 1;
+
+#if DEBUG_SENSORS_GYROSCOPE
+        print_debug(GL, stdout, CYELLOW, 0, "Roll=%d Pitch:%d Yaw:%d Temp:%d", (int)rov.environment.acelerometer.roll, (int)rov.environment.acelerometer.pitch, (int)rov.environment.acelerometer.yaw, rov.environment.acelerometer.Tmp);
 #endif
 
     }

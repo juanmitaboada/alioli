@@ -7,7 +7,7 @@
 #define TIMEOUT_RS485_MS 0
 #define TRANSFER_RS485_WAIT_MS 0
 
-#define MAVLINK_SYSID 1
-#define MAVLINK_COMPID 2
+#define OSD_MAVLINK_SYSID 1
+#define OSD_MAVLINK_COMPID 1
 
 #endif

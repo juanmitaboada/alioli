@@ -717,6 +717,8 @@ void transmission_setup(long int now) {
 
     // Setup serial ports
     serial_setup();
+
+    // Setup modules
     communication_setup();
 
     // Set local config

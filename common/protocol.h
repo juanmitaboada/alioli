@@ -106,9 +106,9 @@ typedef struct TAcelerometer {
     // int GyX;
     // int GyY;
     // int GyZ;
-    float angx;
-    float angy;
-    float angz;
+    float roll;     // Roll
+    float pitch;    // Pitch
+    float yaw;      // Heading or Yaw
 } Acelerometer;
 
 typedef struct TWaterAnalisys {
@@ -124,9 +124,9 @@ typedef struct TEnvironment {
     float altitude;
     float pressure;
     float temperaturegy;    // Temperature Gyroscope
-    float temperature1;     // Sensor
-    float temperature2;     // Sensor
-    float temperaturebmp;   // BMP Sensor
+    float temperature1;     // Battery Temperature
+    float temperature2;     // Water Temperature
+    float temperaturebmp;   // Internal Temperature (BMP Sensor)
     float voltage;          // INA Sensor (Power sensor)
     float amperage;         // INA Sensor (Power sensor)
     Acelerometer acelerometer;

@@ -133,7 +133,7 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         if (buoy.acelerometer_newdata) {
 
                             // Send attitude
-                            mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.mavlink_msg), millis(), 45.0, 45.0, 45.0, 0.0, 0.0, 0.0);
+                            mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.mavlink_msg), millis(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw, 0.0, 0.0, 0.0);
                             mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.mavlink_msg));
 
                             // The data is not new anymore

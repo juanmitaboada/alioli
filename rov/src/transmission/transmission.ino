@@ -5,6 +5,7 @@
 
 #include "transmission.h"
 #include "communication.h"
+#include "osd.h"
 
 TransmissionConfig transmission_config;
 
@@ -35,7 +36,10 @@ void transmission_setup(long int now) {
 
     // Setup serial ports
     serial_setup();
-    communication_setup();
+
+    // Setup modules
+    // communication_setup();
+    osd_setup(now);
 
     // Set local config
     transmission_config.nextevent = 0;
@@ -54,12 +58,12 @@ void transmission_loop(long int now) {
     char *buf=NULL, *answer=NULL;
     unsigned int buf_size=0, buf_allocated=0, answer_size=0, answer_allocated=0;
 
+    /*
     // Check transmission lookup
     if (transmission_config.nextevent<now) {
 
         // Set next event
         transmission_config.nextevent = now+TRANSMISSION_MS;
-
 
         // Get answer
         buf_size = 0;
@@ -128,5 +132,16 @@ void transmission_loop(long int now) {
 
 
     }
+    */
+
+    // Execute OSD loop
+#if DEBUG_SENSORS
+#if OPTIMIZE
+    Serial.println(F(OSD));
+#else
+    print_debug(SENSORS_LOOP, stdout, CPURPLE, COLOR_NORMAL, "OSD");
+#endif
+#endif
+    osd_loop(now);
 
 }

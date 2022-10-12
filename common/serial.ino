@@ -356,7 +356,7 @@ void serial_setup() {
     digitalWrite(SERIAL2_CTRLPIN, LOW);
 #endif
 #ifndef ESP32
-    Serial2.begin(SERIAL1_SPEED, SERIAL_8N1);
+    Serial2.begin(SERIAL2_SPEED, SERIAL_8N1);
 #else
     Serial2.begin(SERIAL2_SPEED, SERIAL_8N1, SERIAL_RXD2, SERIAL_TXD2);
     Serial2.setRxBufferSize(65535);
@@ -371,7 +371,7 @@ void serial_setup() {
     digitalWrite(SERIAL3_CTRLPIN, LOW);
 #endif
 #ifndef ESP32
-    Serial3.begin(SERIAL1_SPEED, SERIAL_8N1);
+    Serial3.begin(SERIAL3_SPEED, SERIAL_8N1);
 #else
     Serial3.begin(SERIAL3_SPEED);
     Serial3.setRxBufferSize(65535);

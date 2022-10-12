@@ -55,9 +55,9 @@ void protocol_print_environment(Environment *environment) {
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Voltage: %s%s", COLOR_WHITE, dtostrf(environment->voltage, 8, 4, s1));
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Amperage: %s%s", COLOR_WHITE, dtostrf(environment->amperage, 8, 4, s1));
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer Tmp: %s%d", COLOR_WHITE, environment->acelerometer.Tmp);
-    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer AngX: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.angx, 8, 4, s1));
-    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer AngY: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.angy, 8, 4, s1));
-    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Aceleromter AngZ: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.angz, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer Roll: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.roll, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer Pitch: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.pitch, 8, 4, s1));
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Aceleromter Yaw: %s%s", COLOR_WHITE, dtostrf(environment->acelerometer.yaw, 8, 4, s1));
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys PH: %s%s", COLOR_WHITE, dtostrf(environment->analisys.ph, 8, 4, s1));
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys PH Temp: %s%s", COLOR_WHITE, dtostrf(environment->analisys.ph_temp, 8, 4, s1));
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys ORP: %s%s", COLOR_WHITE, dtostrf(environment->analisys.orp, 8, 4, s1));
@@ -74,9 +74,9 @@ void protocol_print_environment(Environment *environment) {
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Voltage: %s%.2f", COLOR_WHITE, environment->voltage);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Amperage: %s%.2f", COLOR_WHITE, environment->amperage);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer Tmp: %s%d", COLOR_WHITE, environment->acelerometer.Tmp);
-    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer AngX: %s%.2f", COLOR_WHITE, environment->acelerometer.angx);
-    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer AngY: %s%.2f", COLOR_WHITE, environment->acelerometer.angy);
-    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Aceleromter AngZ: %s%.2f", COLOR_WHITE, environment->acelerometer.angz);
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer Roll: %s%.2f", COLOR_WHITE, environment->acelerometer.roll);
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Acelerometer Pitch: %s%.2f", COLOR_WHITE, environment->acelerometer.pitch);
+    print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Aceleromter Yaw: %s%.2f", COLOR_WHITE, environment->acelerometer.yaw);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys PH: %s%.2f", COLOR_WHITE, environment->analisys.ph);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys PH Temp: %s%.2f", COLOR_WHITE, environment->analisys.ph_temp);
     print_debug(CPROTOCOL, stdout, CCYAN, COLOR_NOHEAD, "> Analisys ORP: %s%.2f", COLOR_WHITE, environment->analisys.orp);
@@ -283,9 +283,9 @@ void protocol_setup_environment(Environment *environment) {
     environment->voltage=0.0;
     environment->amperage=0.0;
     environment->acelerometer.Tmp=0;
-    environment->acelerometer.angx=0;
-    environment->acelerometer.angy=0;
-    environment->acelerometer.angz=0;
+    environment->acelerometer.roll=0;
+    environment->acelerometer.pitch=0;
+    environment->acelerometer.yaw=0;
     environment->analisys.ph=0;
     environment->analisys.ph_temp=0;
     environment->analisys.orp=0;
