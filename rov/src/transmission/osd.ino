@@ -176,6 +176,20 @@ void osd_loop(long int now) {
         answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
 
+        // VFR HUD Message
+        mavlink_msg_vfr_hud_pack(
+            mavlink_system.sysid,
+            mavlink_system.compid,
+            &mavlink_msg,
+            0,          // Air speed (m/s) - Vehicle speed
+            0,          // Ground speed (m/s) - Current ground speed
+            rov.environment.acelerometer.yaw360,   // Heading [deg] (0..360, 0=North)
+            100,        // Throttle (%) (0..100)
+            4.4,       // Current altitude (m)
+            3.3         // Current climb rate (m/s)
+            );
+        answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
+        serial_send(OSD_SERIAL, answer, answer_size);
 
 #if DEBUG_OSD
         print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d - (r:%d, p:%d, y:%d)", (int) battery_percent(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw);

@@ -120,6 +120,7 @@ void gyroscope_setup(long int now) {
     rov.environment.acelerometer.roll = 0.0;
     rov.environment.acelerometer.pitch = 0.0;
     rov.environment.acelerometer.yaw = 0.0;
+    rov.environment.acelerometer.yaw360 = 0.0;
     rov.environment.acelerometer.roll_speed = 0.0;
     rov.environment.acelerometer.pitch_speed = 0.0;
     rov.environment.acelerometer.yaw_speed = 0.0;
@@ -135,10 +136,10 @@ void gyroscope_setup(long int now) {
 
 // === LOOP === ===========================================================
 
-float pitch = 0;
-float roll = 0;
-float yaw = 0;
 void gyroscope_loop(long int now) {
+    float pitch = 0;
+    float roll = 0;
+    float yaw = 0;
 #ifdef GYROSCOPE_MPU
     float timeStep = 0.01;
     Vector norm;
@@ -270,16 +271,17 @@ void gyroscope_loop(long int now) {
 
         // Gyroscope
         bno.getEvent(&event);
-        rov.environment.acelerometer.roll = event.orientation.roll   * 3.141592654 / 180;
-        rov.environment.acelerometer.pitch = event.orientation.pitch * 3.141592654 / 180;
-        rov.environment.acelerometer.yaw = event.orientation.heading * 3.141692654 / 180;
+        rov.environment.acelerometer.roll = event.orientation.z   * 3.141592654 / 180;
+        rov.environment.acelerometer.pitch = event.orientation.y * 3.141592654 / 180;
+        rov.environment.acelerometer.yaw = event.orientation.x * 3.141692654 / 180;
+        rov.environment.acelerometer.yaw360 = (int) event.orientation.x % 360;
 
         // New data
         rov.environment_newdata = 1;
 
 #if DEBUG_SENSORS_GYROSCOPE
         Serial.println(String(yaw, 3));
-        print_debug(GL, stdout, CYELLOW, 0, "Roll=%s Pitch:%s Yaw:%s Temp:%d", String(rov.environment.acelerometer.roll, 3).c_str(), String(rov.environment.acelerometer.pitch, 3).c_str(), String(rov.environment.acelerometer.yaw, 3).c_str(), rov.environment.acelerometer.Tmp);
+        print_debug(GL, stdout, CYELLOW, 0, "Roll=%s Pitch:%s Yaw:%s (%s) Temp:%d", String(rov.environment.acelerometer.roll, 3).c_str(), String(rov.environment.acelerometer.pitch, 3).c_str(), String(rov.environment.acelerometer.yaw, 3).c_str(), String(rov.environment.acelerometer.yaw360, 3).c_str(), rov.environment.acelerometer.Tmp);
 #endif
 
     }
