@@ -249,6 +249,7 @@ void engine_move(const char* name, unsigned short int target) {
 // === LOOP === ===========================================================
 
 void engines_loop(long int now) {
+#if MODULE_ENGINES
 #if DEBUG_ENGINES
     // print_debug("ENGINES-LOOP", stdout, CYELLOW, COLOR_NORMAL, "Engine");
 #endif
@@ -275,4 +276,5 @@ void engines_loop(long int now) {
         // If no movement, stop
         engine_move("ENGINES", ROVER_MOVE_STOP);
     }
+#endif
 }

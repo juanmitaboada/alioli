@@ -39,6 +39,7 @@ void sensors_setup(long int now) {
 // === LOOP === ===========================================================
 
 void sensors_loop(long int now) {
+#if MODULE_SENSORS
 #if DEBUG_SENSORS
 #if OPTIMIZE
     Serial.println(F("Gyroscope"));
@@ -89,6 +90,7 @@ void sensors_loop(long int now) {
     Serial.println(F("loop end!"));
 #else
     print_debug(SENSORS_LOOP, stdout, CYELLOW, COLOR_NORMAL, "loop end!");
+#endif
 #endif
 #endif
 }

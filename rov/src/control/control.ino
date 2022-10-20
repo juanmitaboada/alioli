@@ -31,6 +31,7 @@ void control_setup(long int now) {
 // === LOOP === ===========================================================
 
 void control_loop(long int now) {
+#if MODULE_CONTROL
 // #if PAD
 // #if DEBUG_CONTROL
 //     print_debug(CL, stdout, "purple", COLOR_NORMAL, "Pad");
@@ -42,4 +43,5 @@ void control_loop(long int now) {
     print_debug(CL, stdout, "purple", COLOR_NORMAL, "Buoyancy");
 #endif
     buoyancy_loop(now);
+#endif
 }

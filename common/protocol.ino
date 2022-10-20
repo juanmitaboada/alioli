@@ -320,6 +320,19 @@ void protocol_setup_package(AlioliProtocol *package) {
     package->payload = NULL;
     package->crc = 0;
 }
+
+
+void protocol_free_package(AlioliProtocol *package) {
+    package->header = 0;
+    package->kind = 0;
+    package->payload_size = 0;
+    package->crc = 0;
+    if (package->payload) {
+        free(package->payload);
+        package->payload = NULL;
+    }
+}
+
 void protocol_setup_status(AlioliProtocolStatus *status) {
     status->status = 0;
     status->total = 0;
@@ -507,4 +520,3 @@ unsigned short int protocol_parse_char(byte element, AlioliProtocol *package, Al
     // Return if we finished a package
     return done;
 }
-

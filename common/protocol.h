@@ -172,6 +172,7 @@ unsigned short int protocol_unpack_userrequest(AlioliProtocol *package, UserRequ
 void protocol_setup_environment(Environment **environment);
 void protocol_setup_userrequest(UserRequest **userrequest);
 void protocol_setup_package(AlioliProtocol *package);
+void protocol_free_package(AlioliProtocol *package);
 void protocol_setup_status(AlioliProtocolStatus *status);
 
 // Parse byte-by-byte an Alioli Package

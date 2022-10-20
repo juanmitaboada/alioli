@@ -14,6 +14,7 @@ struct TMonitorLight {
 typedef struct TMonitorLight MonitorLight;
 
 struct TMonitorconfig {
+    long int nextevent;
     unsigned short int red_counter;
     MonitorLight onboard;
     MonitorLight red;

@@ -128,6 +128,7 @@ void monitor_setup(long int now) {
 
     // Reset lights
     lights_reset(now);
+    monitor_config.nextevent = 0;
 
 #if DEBUG_MONITOR
     // Name lights
@@ -140,7 +141,8 @@ void monitor_setup(long int now) {
 }
 
 void monitor_loop(long int now) {
-#if LIGHTS
+#if MODULE_MONITOR
+#if MODULE_MONITOR_LIGHTS
     unsigned short int red_on=0;
 
     // Switch lights
@@ -156,4 +158,17 @@ void monitor_loop(long int now) {
     }
 #endif
 
+#if MODULE_MONITOR_RAM
+    // Monitor
+    if (monitor_config.nextevent<now) {
+
+        // Set next event
+        monitor_config.nextevent = now+MONITOR_RAM_LOOKUP_MS;
+
+        // Show available RAM
+        Serial.print(F("                             Available RAM="));
+        Serial.println(availableRAM());
+    }
+#endif
+#endif
 }

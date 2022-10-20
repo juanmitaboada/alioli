@@ -50,6 +50,7 @@ int8_t battery_percent() {
 // === LOOP === ================================================================================
 
 void osd_loop(long int now) {
+#if MODULE_OSD
     mavlink_message_t mavlink_msg;
     char answer[MAVLINK_MAX_PAYLOAD_LEN]={0};
     unsigned int answer_size=0;
@@ -117,21 +118,6 @@ void osd_loop(long int now) {
             rov.environment.acelerometer.pitch_speed,   // PITCH angular speed [rad/s]
             rov.environment.acelerometer.yaw_speed      // YAW angular speed [rad/s]
         );
-        /*
-        mavlink_msg_attitude_quaternion_pack(
-            mavlink_system.sysid,
-            mavlink_system.compid,
-            &mavlink_msg,
-            millis(),       // Time since system boot (millis)
-            rov.environment.acelerometer.w,     // Quaternion 1, w
-            rov.environment.acelerometer.x,     // Quaternion 2, x
-            rov.environment.acelerometer.y,     // Quaternion 3, y
-            rov.environment.acelerometer.z,     // Quaternion 4, z
-            0.0,                                // ROLL angular speed [rad/s]
-            0.0,                                // PITCH angular speed [rad/s]
-            0.0                                 // YAW angular speed [rad/s]
-        );
-        */
         answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
 
@@ -217,5 +203,5 @@ void osd_loop(long int now) {
         print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d - (r:%d, p:%d, y:%d, h:%d)", (int) battery_percent(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw, rov.environment.acelerometer.compass);
 #endif
     }
-
+#endif
 }

@@ -6,6 +6,16 @@
 #define RTC 1
 #define OPTIMIZE 1
 
+// MODULES
+#define MODULE_OSD 1
+#define MODULE_SENSORS 1
+#define MODULE_ENGINES 1
+#define MODULE_BRAIN 1
+#define MODULE_CONTROL 1
+#define MODULE_MONITOR 1
+#define MODULE_MONITOR_RAM 1
+#define MODULE_MONITOR_LIGHTS 1
+
 // Debugger
 #define ALIOLI_ASSERTS 1
 #define DEBUG_NO
@@ -22,7 +32,7 @@
 #define DEBUG_MONITOR 0
 #define DEBUG_TRANSMISSION 0
 #define DEBUG_TRANSMISSION_MSG 0
-#define DEBUG_COMMUNICATION 1
+#define DEBUG_COMMUNICATION 0
 #define DEBUG_OSD 0
 
 // Lookups
@@ -36,6 +46,7 @@
 #define BUOYANCY_LOOKUP_MS 500
 // #define OSD_LOOKUP_MS 5000
 #define OSD_LOOKUP_MS 500
+#define MONITOR_RAM_LOOKUP_MS 10000
 
 // PAD
 // #define PAD 0
@@ -43,7 +54,6 @@
 // #define DEFAULT_CONTROL_PAD_Y 1000
 
 // Lights
-#define LIGHTS 0
 #define ONBOARD_LIGHT_PINOUT 13     // Onboard led
 #define ONBOARD_LIGHT_ON_MS 100
 #define ONBOARD_LIGHT_OFF_MS 900
@@ -55,7 +65,7 @@
 #define GREEN_LIGHT_OFF_MS 200
 
 // POWER SENSOR
-#define POWER_INA219_MUST_EXIST 0   // INA219 device must exists (power sensor)
+#define POWER_INA219_MUST_EXIST 1   // INA219 device must exists (power sensor)
 
 // PAD
 // #define PAD_PINOUT_X_pin 0          // Analog pin connected to X output

@@ -34,6 +34,7 @@ void brain_setup(long int now) {
 // === LOOP === ===========================================================
 
 void brain_loop(long int now) {
+#if MODULE_BRAIN
 #if DEBUG_BRAIN
     char senstemp[20] = "";
 #endif
@@ -50,4 +51,5 @@ void brain_loop(long int now) {
         print_debug(BL, stdout, "white", COLOR_NORMAL, "(%3d, %3d)", rov.pos.angx, rov.pos.angy);
 #endif
     }
+#endif
 }

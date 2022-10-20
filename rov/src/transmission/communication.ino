@@ -47,7 +47,7 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                             Serial.print(F("HEARTBEAT: Delay="));
                             Serial.println(heartbeat.answered-heartbeat.requested);
 #else
-                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "HEARTBEAT: %ld delay", heartbeat.answered-heartbeat.requested);
+                            print_debug(CCOMMUNICATION, stdout, CWHITE, 0, "HEARTBEAT: %ld delay - Available RAM=%d", heartbeat.answered-heartbeat.requested, availableRAM());
 #endif
 #endif
 
@@ -137,6 +137,10 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
 #endif
 #endif
             }
+
+            // Make sure that reading package doesn't cost us memory
+            protocol_free_package(&communication_config.alioli_protocol_msg);
+
         }
 
         // Visit next character
@@ -148,23 +152,25 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
     // Move back what is left to the beginning of the buffer
     if (buf_idx<communication_config.alioli_protocol_buf_size) {
         // Left some bytes for reading in the future
-        memmove(communication_config.alioli_protocol_buf, communication_config.alioli_protocol_buf+buf_idx,communication_config.alioli_protocol_buf_size-buf_idx);
+        memmove(communication_config.alioli_protocol_buf, communication_config.alioli_protocol_buf+buf_idx, communication_config.alioli_protocol_buf_size-buf_idx);
+        // Set new size
+        communication_config.alioli_protocol_buf_size -= buf_idx;
     } else {
         // Everything readen
         communication_config.alioli_protocol_buf_size = 0;
     }
 
     // If something in the buffer, warn about it!
-    if (communication_config.alioli_protocol_buf_size) {
 #if DEBUG_COMMUNICATION
+    if (communication_config.alioli_protocol_buf_size) {
 #if OPTIMIZE
         Serial.print(F("ALIOLI PROTOCOL BUFFER: "));
         Serial.println(communication_config.alioli_protocol_buf_size);
 #else
         print_debug(CCOMMUNICATION, stdout, CBLUE, 0, "ALIOLI PROTOCOL Buffer: %d", communication_config.alioli_protocol_buf_size);
 #endif
-#endif
     }
+#endif
 
     // We didn't get any alioli_protocol message
 #if DEBUG_COMMUNICATION

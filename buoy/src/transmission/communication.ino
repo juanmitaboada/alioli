@@ -338,6 +338,10 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
                     //Do nothing
                     print_debug(CROV, stdout, CYELLOW, 0, "ALIOLI PROTOCOL Unknown message with KIND %d", communication_config.alioli_protocol_msg.kind);
             }
+
+            // Make sure that reading package doesn't cost us memory
+            protocol_free_package(&communication_config.alioli_protocol_msg);
+
         }
 
         // Visit next character
@@ -350,6 +354,8 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
     if (buf_idx<communication_config.alioli_protocol_buf_size) {
         // Left some bytes for reading in the future
         memmove(communication_config.alioli_protocol_buf, communication_config.alioli_protocol_buf+buf_idx,communication_config.alioli_protocol_buf_size-buf_idx);
+        // Set new size
+        communication_config.alioli_protocol_buf_size -= buf_idx;
     } else {
         // Everything readen
         communication_config.alioli_protocol_buf_size = 0;
