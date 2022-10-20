@@ -124,7 +124,9 @@ void setup() {
     // Setup main object
     // =================
     protocol_setup_environment(&buoy.environment);
+    protocol_setup_environment(&rov.environment);
     protocol_setup_userrequest(&buoy.userrequest);
+    rov.environment_newdata = 0;
     buoy.environment_newdata = 0;
     // GPS
     buoy.gps.latitude = 0.0;

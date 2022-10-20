@@ -120,7 +120,7 @@ void gyroscope_setup(long int now) {
     rov.environment.acelerometer.roll = 0.0;
     rov.environment.acelerometer.pitch = 0.0;
     rov.environment.acelerometer.yaw = 0.0;
-    rov.environment.acelerometer.yaw360 = 0.0;
+    rov.environment.acelerometer.compass = 0.0;
     rov.environment.acelerometer.roll_speed = 0.0;
     rov.environment.acelerometer.pitch_speed = 0.0;
     rov.environment.acelerometer.yaw_speed = 0.0;
@@ -137,10 +137,11 @@ void gyroscope_setup(long int now) {
 // === LOOP === ===========================================================
 
 void gyroscope_loop(long int now) {
+    float compass = 0;
+#ifdef GYROSCOPE_MPU
     float pitch = 0;
     float roll = 0;
     float yaw = 0;
-#ifdef GYROSCOPE_MPU
     float timeStep = 0.01;
     Vector norm;
 #endif
@@ -186,8 +187,12 @@ void gyroscope_loop(long int now) {
         magX = event.magnetic.x;
         magY = event.magnetic.y;
         magZ = event.magnetic.z;
-        double yaw = atan2(magY, magX) * 180/3.14159;
-        Serial.println(String(yaw, 3));
+        double compass = atan2(magY, magX);
+        if (compass < 0) {
+            compass += 2*PI;
+        }
+        compass = compass * 180/M_PI;
+        Serial.println(String(compass, 3));
 
         /*
 
@@ -269,19 +274,34 @@ void gyroscope_loop(long int now) {
         rov.environment.acelerometer.z = quat.z();
         */
 
-        // Gyroscope
+        // Read sensor
         bno.getEvent(&event);
-        rov.environment.acelerometer.roll = event.orientation.z   * 3.141592654 / 180;
+
+        // Position
+        rov.environment.acelerometer.roll = -event.orientation.z   * 3.141592654 / 180;
         rov.environment.acelerometer.pitch = event.orientation.y * 3.141592654 / 180;
         rov.environment.acelerometer.yaw = event.orientation.x * 3.141692654 / 180;
-        rov.environment.acelerometer.yaw360 = (int) event.orientation.x % 360;
+
+        // Aceleration
+        rov.environment.acelerometer.roll_speed = event.acceleration.z;
+        rov.environment.acelerometer.pitch_speed = event.acceleration.y;
+        rov.environment.acelerometer.yaw_speed = event.acceleration.z;
+
+        // Compass
+        bno.getEvent(&event, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+        compass = atan2(event.magnetic.y, event.magnetic.x);
+        // Negative correction
+        if (compass < 0) {
+            compass += 2*PI;
+        }
+        // Save has degrees (0..360)
+        rov.environment.acelerometer.compass = (int) compass * 180/M_PI;
 
         // New data
         rov.environment_newdata = 1;
 
 #if DEBUG_SENSORS_GYROSCOPE
-        Serial.println(String(yaw, 3));
-        print_debug(GL, stdout, CYELLOW, 0, "Roll=%s Pitch:%s Yaw:%s (%s) Temp:%d", String(rov.environment.acelerometer.roll, 3).c_str(), String(rov.environment.acelerometer.pitch, 3).c_str(), String(rov.environment.acelerometer.yaw, 3).c_str(), String(rov.environment.acelerometer.yaw360, 3).c_str(), rov.environment.acelerometer.Tmp);
+        print_debug(GL, stdout, CYELLOW, 0, "Roll=%s rad (%s rad/s) Pitch:%s rad (%s rad/s) Yaw:%s rad (%s rad/s)   Compass: %sº  Temp: %dºC", String(rov.environment.acelerometer.roll, 3).c_str(), String(rov.environment.acelerometer.roll_speed, 3).c_str(), String(rov.environment.acelerometer.pitch, 3).c_str(), String(rov.environment.acelerometer.pitch_speed, 3).c_str(), String(rov.environment.acelerometer.yaw, 3).c_str(), String(rov.environment.acelerometer.yaw_speed, 3).c_str(), String(rov.environment.acelerometer.compass, 3).c_str(), rov.environment.acelerometer.Tmp);
 #endif
 
     }

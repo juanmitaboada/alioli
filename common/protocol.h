@@ -112,8 +112,8 @@ typedef struct TAcelerometer {
     // float z;            // Quaternion 4, z
     float roll;         // Roll [rad] (-pi..+pi)
     float pitch;        // Pitch [rad] (-pi..+pi)
-    float yaw;          // Heading or Yaw [rad] (-pi..+pi)
-    float yaw360;       // Heading or Yaw [deg360] (0..360)
+    float yaw;          // Yaw [rad] (-pi..+pi)
+    float compass;      // Compass [deg360] (0..360)
     float roll_speed;   // Roll angular speed [rad/s]
     float pitch_speed;  // Pitch angular speed [rad/s]
     float yaw_speed;    // Heading or Yaw angular speed [rad/s]

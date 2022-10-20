@@ -54,8 +54,16 @@ void osd_loop(long int now) {
     char answer[MAVLINK_MAX_PAYLOAD_LEN]={0};
     unsigned int answer_size=0;
 
-    // Check temperature lookup
+    // Check OSD lookup
     if (osd_config.nextevent<now) {
+
+#if DEBUG_OSD
+#if OPTIMIZE
+        Serial.println(F("OSD: INI"));
+#else
+        print_debug(OSD, stdout, CPURPLE, COLOR_NORMAL, "OSD");
+#endif
+#endif
 
         // Set next event
         osd_config.nextevent = now+OSD_LOOKUP_MS;
@@ -101,13 +109,13 @@ void osd_loop(long int now) {
             mavlink_system.sysid,
             mavlink_system.compid,
             &mavlink_msg,
-            millis(),       // Time since system boot (millis)
-            rov.environment.acelerometer.roll,  // ROLL angle [rad] (-pi..+pi)
-            rov.environment.acelerometer.pitch, // PITCH angle [rad] (-pi..+pi)
-            rov.environment.acelerometer.yaw,   // YAW angle [rad] (-pi..+pi)
-            0.0,                                // ROLL angular speed [rad/s]
-            0.0,                                // PITCH angular speed [rad/s]
-            0.0                                 // YAW angular speed [rad/s]
+            millis(),                                   // Time since system boot (millis)
+            rov.environment.acelerometer.roll,          // ROLL angle [rad] (-pi..+pi)
+            rov.environment.acelerometer.pitch,         // PITCH angle [rad] (-pi..+pi)
+            rov.environment.acelerometer.yaw,           // YAW angle [rad] (-pi..+pi)
+            rov.environment.acelerometer.roll_speed,    // ROLL angular speed [rad/s]
+            rov.environment.acelerometer.pitch_speed,   // PITCH angular speed [rad/s]
+            rov.environment.acelerometer.yaw_speed      // YAW angular speed [rad/s]
         );
         /*
         mavlink_msg_attitude_quaternion_pack(
@@ -139,7 +147,7 @@ void osd_loop(long int now) {
             0,                      // Altitude [mm]
             UINT16_MAX,             // EPH
             UINT16_MAX,             // EPV
-            0,                      // GPS ground speed [cm/s]
+            UINT16_MAX,             // GPS ground speed [cm/s]
             UINT16_MAX,             // Course over ground speed [cdeg]
             20                      // Number of satellites visible
         );
@@ -181,18 +189,32 @@ void osd_loop(long int now) {
             mavlink_system.sysid,
             mavlink_system.compid,
             &mavlink_msg,
-            0,          // Air speed (m/s) - Vehicle speed
-            0,          // Ground speed (m/s) - Current ground speed
-            rov.environment.acelerometer.yaw360,   // Heading [deg] (0..360, 0=North)
-            100,        // Throttle (%) (0..100)
-            4.4,       // Current altitude (m)
-            3.3         // Current climb rate (m/s)
+            0,                                      // Air speed (m/s) - Vehicle speed
+            0,                                      // Ground speed (m/s) - Current ground speed
+            (int16_t) rov.environment.acelerometer.compass,   // Heading [deg] (0..360, 0=North)
+            100,                                    // Throttle (%) (0..100)
+            rov.environment.altitude,               // Current altitude (m)
+            0                                       // Current climb rate (m/s)
             );
         answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
 
-#if DEBUG_OSD
-        print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d - (r:%d, p:%d, y:%d)", (int) battery_percent(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw);
+        // Scaled Pressure Message
+        mavlink_msg_scaled_pressure_pack(
+            mavlink_system.sysid,
+            mavlink_system.compid,
+            &mavlink_msg,
+            millis(),                           // Time since system boot (millis)
+            rov.environment.pressure,           // Absolute Pressure (hPa)
+            0,                                  // Differential Pressure (hPa)
+            rov.environment.temperature1*100    // Absolute pressure temperature (cdegC)
+            );
+        answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
+        serial_send(OSD_SERIAL, answer, answer_size);
+
+
+ #if DEBUG_OSD
+        print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d - (r:%d, p:%d, y:%d, h:%d)", (int) battery_percent(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw, rov.environment.acelerometer.compass);
 #endif
     }
 

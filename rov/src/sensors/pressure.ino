@@ -73,6 +73,9 @@ void pressure_setup(long int now) {
 
     // Set local config
     pressure_config.nextevent=0;
+    pressure_config.sea_level_todays_pressure = bmp.readPressure() / 100;
+    // 1013.25 - This is 0m above sea level (but depends on weather)
+    // 1022.689 - Today's pressure
 
 #if DEBUG_SENSORS
 #if OPTIMIZE
@@ -99,8 +102,8 @@ void pressure_loop(long int now) {
 
         // Read BMP sensor
         temperaturebmp = bmp.readTemperature();
-        pressure = bmp.readPressure();
-        altitude = bmp.readAltitude(1013.25);
+        pressure = bmp.readPressure() / 100 - pressure_config.sea_level_todays_pressure;
+        altitude = abs(bmp.readAltitude(pressure_config.sea_level_todays_pressure));
 
         // Save info
         rov.environment.temperaturebmp = temperaturebmp;
@@ -108,7 +111,7 @@ void pressure_loop(long int now) {
         rov.environment.altitude = altitude;
 
 #if DEBUG_SENSORS_PRESSURE
-        print_debug(PRESSURE_LOOP, stdout, CYELLOW, COLOR_NORMAL, "Temperature BMP: %sºC - Pressure: %s Pa - Altitude: %s m", dtostrf(temperaturebmp, 8, 4, s1), dtostrf(pressure, 8, 4, s2), dtostrf(altitude, 8, 4, s3));
+        print_debug(PRESSURE_LOOP, stdout, CYELLOW, COLOR_NORMAL, "Temperature BMP: %sºC - Pressure: %s hPa - Altitude: %s m", dtostrf(temperaturebmp, 8, 4, s1), dtostrf(pressure, 8, 4, s2), dtostrf(altitude, 8, 4, s3));
 #endif
     }
 

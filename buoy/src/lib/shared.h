@@ -38,4 +38,8 @@ Adafruit_INA219 ina219;
 #include "buoy.h"
 Buoy buoy;
 
+// === Rov ===
+#include "rov.h"
+Rov rov;
+
 #endif

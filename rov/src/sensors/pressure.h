@@ -8,6 +8,7 @@
 
 struct TPressureConfig {
     long int nextevent;
+    float sea_level_todays_pressure;
 };
 typedef struct TPressureConfig PressureConfig;
 

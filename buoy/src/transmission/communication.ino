@@ -130,14 +130,14 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                         }
 
                         // If new attitude data
-                        if (buoy.acelerometer_newdata) {
+                        if (rov.environment_newdata) {
 
                             // Send attitude
                             mavlink_msg_attitude_pack(mavlink_system.sysid, mavlink_system.compid, &(communication_config.mavlink_msg), millis(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw, 0.0, 0.0, 0.0);
                             mavlink_msgcat(answer, answer_size, answer_allocated, &(communication_config.mavlink_msg));
 
                             // The data is not new anymore
-                            buoy.acelerometer_newdata = 0;
+                            rov.environment_newdata = 0;
 
                         }
 
@@ -320,12 +320,13 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
 
                 case ALIOLI_PROTOCOL_KIND_ENVIRONMENT:
                     {
-                        Environment environment;
-                        if (protocol_unpack_environment(&communication_config.alioli_protocol_msg, &environment)) {
+                        if (protocol_unpack_environment(&communication_config.alioli_protocol_msg, &rov.environment)) {
+                            // Set new data available
+                            rov.environment_newdata = 1;
 #ifdef ARDUINO_ARCH_AVR
-                            print_debug(CROV, stdout, CWHITE, 0, "Environment: %sV - %smA", dtostrf(environment.voltage, 8, 4, s1), dtostrf(environment.amperage, 8, 4, s2));
+                            print_debug(CROV, stdout, CWHITE, 0, "Environment: %sV - %smA", dtostrf(rov.environment.voltage, 8, 4, s1), dtostrf(rov.environment.amperage, 8, 4, s2));
 #else
-                            print_debug(CROV, stdout, CWHITE, 0, "Environment: %.2fV - %.2fmA", environment.voltage, environment.amperage);
+                            print_debug(CROV, stdout, CWHITE, 0, "Environment: %.2fV - %.2fmA", rov.environment.voltage, rov.environment.amperage);
 #endif
                         } else {
                             print_debug(CROV, stderr, CRED, 0, "Environment: wrong package");

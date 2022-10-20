@@ -8,6 +8,8 @@
 #include "osd.h"
 
 TransmissionConfig transmission_config;
+const char *TRS="TRs";
+const char *TRL="TRl";
 
 unsigned short int rs485_getmsg(char **buf, size_t *buf_size, size_t *buf_allocated, unsigned int wait, unsigned int wait_transfer) {
     unsigned short int error=0;
@@ -30,7 +32,7 @@ void transmission_setup(long int now) {
 #if OPTIMIZE
     Serial.print(F("TRANSMISSION-SETUP: INI-> "));
 #else
-    print_debug("TRANSMISSION-SETUP", stdout, CPURPLE, COLOR_NOTAIL, "INI -> ");
+    print_debug(TRS, stdout, CPURPLE, COLOR_NOTAIL, "INI -> ");
 #endif
 #endif
 
@@ -38,7 +40,7 @@ void transmission_setup(long int now) {
     serial_setup();
 
     // Setup modules
-    // communication_setup();
+    communication_setup();
     osd_setup(now);
 
     // Set local config
@@ -49,7 +51,7 @@ void transmission_setup(long int now) {
 #if OPTIMIZE
     Serial.println(F("DONE"));
 #else
-    print_debug("TRANSMISSION-SETUP", stdout, CGREEN, COLOR_NOHEAD, "DONE");
+    print_debug(TRS, stdout, CGREEN, COLOR_NOHEAD, "DONE");
 #endif
 #endif
 }
@@ -58,9 +60,16 @@ void transmission_loop(long int now) {
     char *buf=NULL, *answer=NULL;
     unsigned int buf_size=0, buf_allocated=0, answer_size=0, answer_allocated=0;
 
-    /*
     // Check transmission lookup
     if (transmission_config.nextevent<now) {
+
+#if DEBUG_TRANSMISSION
+#if OPTIMIZE
+        Serial.println(F("TRl: INI"));
+#else
+        print_debug(TRL, stdout, CPURPLE, COLOR_NORMAL, "INI");
+#endif
+#endif
 
         // Set next event
         transmission_config.nextevent = now+TRANSMISSION_MS;
@@ -130,18 +139,17 @@ void transmission_loop(long int now) {
             answer_size = 0;
         }
 
+#if DEBUG_TRANSMISSION
+#if OPTIMIZE
+        Serial.println(F("TRl: END"));
+#else
+        print_debug(TRL, stdout, CPURPLE, COLOR_NORMAL, "END");
+#endif
+#endif
 
     }
-    */
 
     // Execute OSD loop
-#if DEBUG_SENSORS
-#if OPTIMIZE
-    Serial.println(F(OSD));
-#else
-    print_debug(SENSORS_LOOP, stdout, CPURPLE, COLOR_NORMAL, "OSD");
-#endif
-#endif
     osd_loop(now);
 
 }

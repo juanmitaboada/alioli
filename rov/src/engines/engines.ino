@@ -110,7 +110,7 @@ void engines_setup(long int now) {
 }
 
 void engine_move(const char* name, unsigned short int target) {
-    EngineConfig *engine=NULL;
+    // EngineConfig *engine=NULL;
 
     // Get engine
 #if DEBUG_ENGINES
