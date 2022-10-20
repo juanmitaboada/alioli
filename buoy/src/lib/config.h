@@ -9,6 +9,11 @@
 #define DUMMY_GPS 1
 #define OPTIMIZE 0
 
+// MODULES
+#define MODULE_MONITOR 1
+#define MODULE_MONITOR_RAM 0
+#define MODULE_MONITOR_LIGHTS 1
+
 // Debugger
 #define DEBUG
 #define DEBUG_MAIN 0
@@ -23,18 +28,19 @@
 // Lookups
 #define TEMPERATURE_LOOKUP_MS 500
 #define POWER_LOOKUP_MS 500
+#define MONITOR_RAM_LOOKUP_MS 10000
 
 // Lights
-#define LIGHTS 0
 #define ONBOARD_LIGHT_PINOUT 25     // Onboard led
 #define ONBOARD_LIGHT_ON_MS 100
 #define ONBOARD_LIGHT_OFF_MS 900
-#define RED_LIGHT_PINOUT 34         // Digital pin to Relay IN 1
-#define RED_LIGHT_ON_MS 100
-#define RED_LIGHT_OFF_MS 1900
-#define GREEN_LIGHT_PINOUT 35       // Digital pin to Relay IN 2
-#define GREEN_LIGHT_ON_MS 100
-#define GREEN_LIGHT_OFF_MS 200
+// #define RED_LIGHT_PINOUT 34         // Digital pin to Relay IN 1
+// #define RED_LIGHT_ON_MS 100
+// #define RED_LIGHT_OFF_MS 1900
+// #define GREEN_LIGHT_PINOUT 35       // Digital pin to Relay IN 2
+// #define GREEN_LIGHT_ON_MS 100
+// #define GREEN_LIGHT_OFF_MS 200
+
 
 // I2C Bus
 #define BUS_I2C_SDA 8

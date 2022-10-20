@@ -19,6 +19,7 @@
 #include "lib/common/alioli.ino"
 #include "lib/common/serial.ino"
 #include "lib/common/protocol.ino"
+#include "monitor/monitor.ino"
 #include "sensors/sensors.ino"
 #include "sensors/power.ino"
 #include "sensors/temperature.ino"
@@ -36,7 +37,6 @@ UART Serial2(SERIAL2_TX_PIN, SERIAL2_RX_PIN, 0, 0);
 #define LED_BUILTIN 13
 #endif
 
-int freeram=0;
 int led_builtin_ts=0;
 unsigned short int led_builtin_status=0;
 
@@ -117,12 +117,10 @@ void setup() {
     // ===========
     print_debug("SETUP", stdout, CBLUE, 0, "Bootloader ready (Now: %ld)", now);
     print_debug("SETUP", stdout, CCYAN, 0, "    Alioli library v%s", alioli_version());
-#ifdef ESP32
-    freeram=ESP.getFreeHeap();
-#endif
 
     // Setup main object
     // =================
+    monitor_setup(now);
     protocol_setup_environment(&buoy.environment);
     protocol_setup_environment(&rov.environment);
     protocol_setup_userrequest(&buoy.userrequest);
@@ -157,12 +155,12 @@ void setup() {
 
 void loop() {
     long int now = millis();
-    int actual_freeram=0;
 
 #if DEBUG_MAIN
     print_debug("MAIN", stdout, CCYAN, 0, "START");
 #endif
 
+    /*
     // Show Internal LED flashing
     if ((millis()-led_builtin_ts)>1000) {
         // Update timestamp
@@ -175,6 +173,7 @@ void loop() {
         }
         led_builtin_status = !led_builtin_status;
     }
+    */
 
     // === SENSORS ===
 #if DEBUG_MAIN
@@ -184,25 +183,20 @@ void loop() {
 
     // === TRANSMISSION ===
 #if DEBUG_MAIN
-    print_debug("MAIN", stdout, "purple", 0, "Transmission");
+    print_debug("MAIN", stdout, CPURPLE, COLOR_NORMAL, "Transmission");
 #endif
     transmission_loop(now);
 
+    // === MONITOR (always last) ===
+    // This should be the last one
 #if DEBUG_MAIN
-    print_debug("MAIN", stdout, CCYAN, 0, "END");
+    print_debug("MAIN", stdout, CPURPLE, COLOR_NORMAL, "Monitor");
 #endif
+    monitor_loop(now); // ALWAYS LAST!
 
-    // Verify memory leaks (memory should stay stable after every loop)
-#ifdef ESP32
-    actual_freeram = ESP.getFreeHeap();
+#if DEBUG_MAIN
+    print_debug("MAIN", stdout, CCYAN, COLOR_NORMAL, "END");
 #endif
-    if (actual_freeram>freeram) {
-        print_debug("MAIN", stdout, CGREEN, 0, "%s RAM detected: %d bytes (Free RAM: %d)", "FREE", actual_freeram-freeram, actual_freeram);
-        freeram = actual_freeram;
-    } else if (actual_freeram<freeram) {
-        print_debug("MAIN", stdout, CYELLOW, 0, "%s RAM detected: %d bytes (Free RAM: %d)", "USED", freeram-actual_freeram, actual_freeram);
-        freeram = actual_freeram;
-    }
 
     // Loop control
     yield();

@@ -13,9 +13,37 @@ int serial_putchar(char c, FILE* f) {
 
 // Show available RAM
 int availableRAM() {
+#ifdef ARDUINO_RASPBERRY_PI_PICO
+    return 0;
+#else
+#ifdef ESP32
+  return ESP.getFreeHeap();
+#else
   extern int __heap_start,*__brkval;
   int v;
   return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int) __brkval);
+#endif
+#endif
+
+/*
+#ifdef __arm__
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // __ARM__
+extern char *__brkval;
+#endif  // __arm__
+
+int availableRAM() {
+   char top;
+#ifdef __arm__
+   return &top - reinterpret_cast<char*>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+   return &top - __brkval;
+#else  // __arm__
+   return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif  // __arm__
+}
+*/
 }
 
 // Memory protection

@@ -13,7 +13,7 @@
 #define MODULE_BRAIN 1
 #define MODULE_CONTROL 1
 #define MODULE_MONITOR 1
-#define MODULE_MONITOR_RAM 1
+#define MODULE_MONITOR_RAM 0
 #define MODULE_MONITOR_LIGHTS 1
 
 // Debugger

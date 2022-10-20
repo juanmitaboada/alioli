@@ -224,7 +224,9 @@ unsigned short int remote_msg(char **buf, unsigned int *buf_size, unsigned int *
                             buoy.userrequest.roll = 0;
                         }
 
+#if DEBUG_COMMUNICATION
                         print_debug(CMAVLINK, stdout, CWHITE, 0, "MANUAL_CONTROL: (%d, %d, %d, %d) - B:(%d, %d) EXT:%d  ===>  (%d, %d, %d, %d) -B:(%d, %d) PR:(%d, %d)  :: Updated: %d", man.x, man.y, man.z, man.r, man.buttons, man.buttons2, man.enabled_extensions, buoy.userrequest.x, buoy.userrequest.y, buoy.userrequest.z, buoy.userrequest.r, buoy.userrequest.buttons1, buoy.userrequest.buttons2, buoy.userrequest.pitch, buoy.userrequest.roll, updated);
+#endif
 
                         // Send message to the ROV if the data is not passive
                         if (updated) {
@@ -311,7 +313,9 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
                     {
                         HeartBeat heartbeat;
                         if (protocol_unpack_heartbeat(&communication_config.alioli_protocol_msg, &heartbeat)) {
+#if DEBUG_COMMUNICATION
                             print_debug(CROV, stdout, CWHITE, 0, "HEARTBEAT: latency %ld second (Time diff=%ld)", get_current_time() - heartbeat.requested, heartbeat.answered-heartbeat.requested);
+#endif
                         } else {
                             print_debug(CROV, stderr, CRED, 0, "HEARTBEAT: wrong package");
                         }
@@ -323,10 +327,12 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
                         if (protocol_unpack_environment(&communication_config.alioli_protocol_msg, &rov.environment)) {
                             // Set new data available
                             rov.environment_newdata = 1;
+#if DEBUG_COMMUNICATION
 #ifdef ARDUINO_ARCH_AVR
                             print_debug(CROV, stdout, CWHITE, 0, "Environment: %sV - %smA", dtostrf(rov.environment.voltage, 8, 4, s1), dtostrf(rov.environment.amperage, 8, 4, s2));
 #else
                             print_debug(CROV, stdout, CWHITE, 0, "Environment: %.2fV - %.2fmA", rov.environment.voltage, rov.environment.amperage);
+#endif
 #endif
                         } else {
                             print_debug(CROV, stderr, CRED, 0, "Environment: wrong package");
