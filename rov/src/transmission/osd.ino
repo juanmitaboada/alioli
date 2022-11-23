@@ -40,7 +40,7 @@ int8_t battery_percent() {
     int8_t i=0;
     float voltages[] = BATTERY_VOLTAGES;
     for (i=10; i>0; i--) {
-        if (rov.environment.voltage>=voltages[i]) {
+        if (rov.environment.voltage_external>=voltages[i]) {
             break;
         }
     }
@@ -92,8 +92,8 @@ void osd_loop(long int now) {
             0,              // Sensors enabled
             0,              // Sensors health
             999,            // Load %
-            (uint16_t) (rov.environment.voltage*1000),  // Battery voltage (mV)
-            (uint16_t) rov.environment.amperage,        // Battery current (cA)
+            (uint16_t) (rov.environment.voltage_external*1000),  // Battery voltage (mV)
+            (uint16_t) rov.environment.amperage_external,        // Battery current (cA)
             battery_percent(),                          // Battery remaining (%)
             0,              // Communication drop rate (UART, I2C, SPI, CAN)
             0,              // Communication errors (UART, I2C, SPI, CAN)
@@ -193,7 +193,7 @@ void osd_loop(long int now) {
             millis(),                           // Time since system boot (millis)
             rov.environment.pressure,           // Absolute Pressure (hPa)
             0,                                  // Differential Pressure (hPa)
-            rov.environment.temperature1*100    // Absolute pressure temperature (cdegC)
+            rov.environment.temp_engines_battery*100    // Absolute pressure temperature (cdegC)
             );
         answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);

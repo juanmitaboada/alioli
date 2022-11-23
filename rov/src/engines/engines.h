@@ -9,14 +9,21 @@
 #define ENGINE_LATERAL_LEFT 4
 #define ENGINE_FRONT_LEFT 5
 
+// Engines BLUE is CLOCK WISE
+#define ENGINE_FRONT_LEFT_CW 0
+#define ENGINE_FRONT_RIGHT_CW 0
+#define ENGINE_LATERAL_LEFT_CW 1
+#define ENGINE_LATERAL_RIGHT_CW 1
+#define ENGINE_BACK_LEFT_CW 0
+#define ENGINE_BACK_RIGHT_CW 0
+
 // Engine direction
 #define ENGINE_GEAR_STOP 0          // Stop
 #define ENGINE_GEAR_HALF 1          // Half speed
 #define ENGINE_GEAR_FULL 2          // Full speed
 #define ENGINE_NOCOLOR 0            // No color - No direction
-#define ENGINE_BLUE 1               // Blue direction
-#define ENGINE_RED  2               // Red direction
-
+#define ENGINE_BLUE 1               // Blue direction (go to the blue side of the engine)
+#define ENGINE_RED  2               // Red direction (go to the red side of the engine)
 
 // Rover movements
 #define ROVER_MOVE_STOP 0

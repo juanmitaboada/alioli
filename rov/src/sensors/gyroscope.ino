@@ -111,7 +111,7 @@ void gyroscope_setup(long int now) {
     gyroscope_config.lasttime = now;
 
     // Set environment
-    rov.environment.temperaturegy = 0.0;
+    rov.environment.temp_gyro = 0.0;
     rov.environment.acelerometer.Tmp = 0.0;
     // rov.environment.acelerometer.w = 0.0;
     // rov.environment.acelerometer.x = 0.0;
@@ -262,7 +262,7 @@ void gyroscope_loop(long int now) {
 
         // Temperature
         temp = bno.getTemp();
-        rov.environment.temperaturegy = temp;
+        rov.environment.temp_gyro = temp;
         rov.environment.acelerometer.Tmp = temp;
 
         // Quaternions
@@ -278,18 +278,18 @@ void gyroscope_loop(long int now) {
         bno.getEvent(&event);
 
         // Position
-        rov.environment.acelerometer.roll = -event.orientation.z   * 3.141592654 / 180;
-        rov.environment.acelerometer.pitch = event.orientation.y * 3.141592654 / 180;
+        rov.environment.acelerometer.roll = event.orientation.y   * 3.141592654 / 180;
+        rov.environment.acelerometer.pitch = event.orientation.z * 3.141592654 / 180;
         rov.environment.acelerometer.yaw = event.orientation.x * 3.141692654 / 180;
 
         // Aceleration
-        rov.environment.acelerometer.roll_speed = event.acceleration.z;
-        rov.environment.acelerometer.pitch_speed = event.acceleration.y;
-        rov.environment.acelerometer.yaw_speed = event.acceleration.z;
+        rov.environment.acelerometer.roll_speed = event.acceleration.y;
+        rov.environment.acelerometer.pitch_speed = event.acceleration.z;
+        rov.environment.acelerometer.yaw_speed = event.acceleration.x;
 
         // Compass
         bno.getEvent(&event, Adafruit_BNO055::VECTOR_MAGNETOMETER);
-        compass = atan2(event.magnetic.y, event.magnetic.x);
+        compass = atan2(event.magnetic.y, event.magnetic.x) + PI;
         // Negative correction
         if (compass < 0) {
             compass += 2*PI;

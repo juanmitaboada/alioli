@@ -69,7 +69,7 @@ void pressure_setup(long int now) {
 
     // Set environment
     rov.environment.pressure = 0.0;
-    rov.environment.temperaturebmp = 0.0;
+    rov.environment.temp_bmp = 0.0;
 
     // Set local config
     pressure_config.nextevent=0;
@@ -106,7 +106,7 @@ void pressure_loop(long int now) {
         altitude = abs(bmp.readAltitude(pressure_config.sea_level_todays_pressure));
 
         // Save info
-        rov.environment.temperaturebmp = temperaturebmp;
+        rov.environment.temp_bmp = temperaturebmp;
         rov.environment.pressure = pressure;
         rov.environment.altitude = altitude;
 

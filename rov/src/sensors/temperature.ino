@@ -32,8 +32,9 @@ void temperature_setup(long int now) {
     sensorDS18B20.begin(); 
 
     // Set environment
-    rov.environment.temperature1 = 0.0;
-    rov.environment.temperature2 = 0.0;
+    rov.environment.temp_main_battery = 0.0;
+    rov.environment.temp_sea_water = 0.0;
+    rov.environment.temp_engines_battery = 0.0;
 
     // Set local config
     temperature_config.nextevent=0;
@@ -50,10 +51,7 @@ void temperature_setup(long int now) {
 // === LOOP === ================================================================================
 
 void temperature_loop(long int now) {
-    float temperature1=0.0, temperature2=0.0;
-#if DEBUG_SENSORS_TEMPERATURE
-    char s1[20]="", s2[20]="";
-#endif
+    float temp_main_battery=0.0, temp_sea_water=0.0, temp_engines_battery=0.0;
 
     // Check temperature lookup
     if (temperature_config.nextevent<now) {
@@ -64,22 +62,26 @@ void temperature_loop(long int now) {
         // Instance to OneWire and DallasTemperature classes$
         OneWire oneWireObject(PINOUT_ONEWIRE_BUS_pin);
         DallasTemperature sensorDS18B20(&oneWireObject);
-        DeviceAddress temp1 = TEMPERATURE_SENSOR_1;
-        DeviceAddress temp2 = TEMPERATURE_SENSOR_2;
+        DeviceAddress dev_temp_main_battery = TEMPERATURE_MAIN_BATTERY;
+        DeviceAddress dev_temp_engines_battery = TEMPERATURE_ENGINES_BATTERY;
+        DeviceAddress dev_temp_sea_water = TEMPERATURE_SEA_WATER;
 
         // Get temperature from the sensors
         sensorDS18B20.requestTemperatures();
         // temperature = sensorDS18B20.getTempCByIndex(0);
-        temperature1 = sensorDS18B20.getTempC(temp1);
-        temperature2 = sensorDS18B20.getTempC(temp2);
+        temp_main_battery = sensorDS18B20.getTempC(dev_temp_main_battery);
+        temp_engines_battery = sensorDS18B20.getTempC(dev_temp_engines_battery);
+        temp_sea_water = sensorDS18B20.getTempC(dev_temp_sea_water);
         // temperature== -127.01 ===> ERROR
 
         // Save temperature
-        rov.environment.temperature1 = temperature1;
-        rov.environment.temperature2 = temperature2;
+        rov.environment.temp_main_battery = temp_main_battery;
+        rov.environment.temp_engines_battery = temp_engines_battery;
+        rov.environment.temp_sea_water = temp_sea_water;
 
 #if DEBUG_SENSORS_TEMPERATURE
-        print_debug(TL, stdout, CYELLOW, COLOR_NORMAL, "Temperature 1: %sºC - Temperature 2: %sºC", dtostrf(temperature1, 8, 4, s1), dtostrf(temperature2, 8, 4, s2));
+        char s1[20]="", s2[20]="", s3[20]="";
+        print_debug(TL, stdout, CYELLOW, COLOR_NORMAL, "Temp Main Bat: %sºC - Temp Sea Water: %sºC - Temp Engines: %sºC", dtostrf(temp_main_battery, 8, 4, s1), dtostrf(temp_sea_water, 8, 4, s2), dtostrf(temp_engines_battery, 8, 4, s3));
 #endif
     }
 

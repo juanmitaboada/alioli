@@ -36,7 +36,8 @@ Adafruit_BNO055 bno;
 Adafruit_BMP280 bmp;
 #include <Adafruit_BusIO_Register.h>
 #include <Adafruit_INA219.h>
-Adafruit_INA219 ina219;
+Adafruit_INA219 ina219_main;
+Adafruit_INA219 ina219_external(POWER_INA219_EXTERNAL_ADDR);
 
 // === ROV ===
 #include "rov.h"

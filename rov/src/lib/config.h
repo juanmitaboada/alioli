@@ -19,6 +19,7 @@
 // Debugger
 #define ALIOLI_ASSERTS 1
 #define DEBUG_NO
+#define DEBUG_SETUP 0
 #define DEBUG_MAIN 0
 #define DEBUG_CONTROL 0
 #define DEBUG_SENSORS 0
@@ -65,7 +66,9 @@
 #define GREEN_LIGHT_OFF_MS 200
 
 // POWER SENSOR
-#define POWER_INA219_MUST_EXIST 1   // INA219 device must exists (power sensor)
+#define POWER_INA219_MAIN_MUST_EXIST 1      // INA219 MAIN device must exists (power sensor)
+#define POWER_INA219_EXTERNAL_MUST_EXIST 1  // INA219 EXTERNAL device must exists (power sensor)
+#define POWER_INA219_EXTERNAL_ADDR 0x41     // INA219 device address for INA219 sensor External Battery
 
 // PAD
 // #define PAD_PINOUT_X_pin 0          // Analog pin connected to X output
@@ -80,8 +83,9 @@
 
 // Temperature
 #define PINOUT_ONEWIRE_BUS_pin 3    // Digital pin
-#define TEMPERATURE_SENSOR_1 {0x28, 0x6A, 0x30, 0x45, 0x92,  0x5, 0x2, 0xD3}
-#define TEMPERATURE_SENSOR_2 {0x28, 0x2E, 0xEC, 0x45, 0x92, 0x15, 0x2, 0xE9}
+#define TEMPERATURE_MAIN_BATTERY {0x28, 0xFF, 0x64, 0x1E, 0x5F, 0xBB, 0x7D, 0x6B}    // Internal Bat 11.1V
+#define TEMPERATURE_ENGINES_BATTERY {0x28, 0xFF, 0x64, 0x1E, 0x23, 0x89, 0xC7, 0xCF} // Engines Bat 12V
+#define TEMPERATURE_SEA_WATER {0x28, 0xFF, 0x64, 0x1E, 0x5F, 0xBD, 0x68, 0x63}       // Sea Water
 
 // Pressure
 #define PRESSURE_SENSOR_ADDRESS 0x76
@@ -112,18 +116,18 @@
 //      3       4       
 //                      
 // Engines pinout
-#define ENGINE_FRONT_LEFT_DIR 22
-#define ENGINE_FRONT_LEFT_ENABLE 28
-#define ENGINE_LATERAL_LEFT_DIR 23
-#define ENGINE_LATERAL_LEFT_ENABLE 29
-#define ENGINE_BACK_LEFT_DIR 24
-#define ENGINE_BACK_LEFT_ENABLE 30
-#define ENGINE_BACK_RIGHT_DIR 25
-#define ENGINE_BACK_RIGHT_ENABLE 31
-#define ENGINE_LATERAL_RIGHT_DIR 26
-#define ENGINE_LATERAL_RIGHT_ENABLE 32
-#define ENGINE_FRONT_RIGHT_DIR 27
-#define ENGINE_FRONT_RIGHT_ENABLE 33
+#define ENGINE_FRONT_RIGHT_DIR 22
+#define ENGINE_FRONT_RIGHT_ENABLE 28
+#define ENGINE_LATERAL_RIGHT_DIR 23
+#define ENGINE_LATERAL_RIGHT_ENABLE 29
+#define ENGINE_BACK_RIGHT_DIR 24
+#define ENGINE_BACK_RIGHT_ENABLE 30
+#define ENGINE_BACK_LEFT_DIR 25
+#define ENGINE_BACK_LEFT_ENABLE 31
+#define ENGINE_LATERAL_LEFT_DIR 26
+#define ENGINE_LATERAL_LEFT_ENABLE 32
+#define ENGINE_FRONT_LEFT_DIR 27
+#define ENGINE_FRONT_LEFT_ENABLE 33
 
 // Analisys pinout
 #define ANALISYS_PH 8

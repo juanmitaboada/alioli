@@ -131,12 +131,15 @@ typedef struct TWaterAnalisys {
 typedef struct TEnvironment {
     float altitude;
     float pressure;
-    float temperaturegy;    // Temperature Gyroscope
-    float temperature1;     // Battery Temperature
-    float temperature2;     // Water Temperature
-    float temperaturebmp;   // Internal Temperature (BMP Sensor)
-    float voltage;          // INA Sensor (Power sensor)
-    float amperage;         // INA Sensor (Power sensor)
+    float temp_gyro;            // Temperature Gyroscope
+    float temp_main_battery;    // Internal Main Battery Temperature
+    float temp_engines_battery; // External Battery Temperature
+    float temp_sea_water;       // Sea Water Temperature
+    float temp_bmp;             // Internal Temperature (BMP Sensor)
+    float voltage_main;         // INA Main Sensor (Power sensor)
+    float amperage_main;        // INA Main Sensor (Power sensor)
+    float voltage_external;     // INA External Sensor (Power sensor)
+    float amperage_external;    // INA External Sensor (Power sensor)
     Acelerometer acelerometer;
     WaterAnalisys analisys;
 

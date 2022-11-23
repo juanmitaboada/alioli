@@ -276,12 +276,13 @@ unsigned short int protocol_unpack_userrequest(AlioliProtocol *package, UserRequ
 void protocol_setup_environment(Environment *environment) {
     environment->altitude=0.0;
     environment->pressure=0.0;
-    environment->temperaturegy=0.0;
-    environment->temperature1=0.0;
-    environment->temperature2=0.0;
-    environment->temperaturebmp=0.0;
-    environment->voltage=0.0;
-    environment->amperage=0.0;
+    environment->temp_gyro=0.0;
+    environment->temp_main_battery=0.0;
+    environment->temp_engines_battery=0.0;
+    environment->temp_sea_water=0.0;
+    environment->temp_bmp=0.0;
+    environment->voltage_external=0.0;
+    environment->amperage_external=0.0;
     environment->acelerometer.Tmp=0;
     // environment->acelerometer.w=0;
     // environment->acelerometer.x=0;

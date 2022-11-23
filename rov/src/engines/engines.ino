@@ -13,6 +13,7 @@ struct TEngineConfig {
     unsigned short int pin_enable;
     unsigned short int dir;
     unsigned short int enable;
+    unsigned short int cw;
 };
 typedef struct TEngineConfig EngineConfig;
 
@@ -22,21 +23,37 @@ struct TEnginesConfig {
 typedef struct TEnginesConfig EnginesConfig;
 EnginesConfig engines_config;
 
-// === SETUP === ==========================================================
+// === FUNCTIONS === ======================================================
 
 void engine_set(EngineConfig *engine, unsigned short int dir, unsigned short int gear) {
+    unsigned short int positive=0;
+
+    // Set GEAR
     if (gear==ENGINE_GEAR_STOP) {
         digitalWrite (engine->pin_enable, LOW);
         engine->enable = 0;
     }
+
+    // Set DIRECTION
     if (dir) {
-        if (dir==ENGINE_BLUE) {
+
+        // Positive
+        positive = (dir == ENGINE_BLUE);
+
+        // Reverse for CCW engines
+        if (!engine->cw) {
+            positive = !positive;
+        }
+
+        // Execute
+        if (positive) {
             digitalWrite (engine->pin_dir, HIGH);
-            engine->dir = 1;
         } else {
             digitalWrite (engine->pin_dir, LOW);
-            engine->dir = 0;
         }
+
+        // Remember direction
+        engine->dir = dir;
     }
     if (gear!=ENGINE_GEAR_STOP) {
         digitalWrite (engine->pin_enable, HIGH);
@@ -44,7 +61,7 @@ void engine_set(EngineConfig *engine, unsigned short int dir, unsigned short int
     }
 }
 
-void engine_setup(const char* name, unsigned short int idx, unsigned short int pin_dir, unsigned short int pin_enable) {
+void engine_setup(const char* name, unsigned short int idx, unsigned short int cw, unsigned short int pin_dir, unsigned short int pin_enable) {
     EngineConfig *engine=NULL;
 
     // Set pinmode
@@ -56,6 +73,7 @@ void engine_setup(const char* name, unsigned short int idx, unsigned short int p
     engine = &(engines_config.engines[idx]);
     engine->pin_dir = pin_dir;
     engine->pin_enable = pin_enable;
+    engine->cw = cw;
     sprintf(engine->name, name);
 
     // Configure port
@@ -91,22 +109,7 @@ void engine_setup(const char* name, unsigned short int idx, unsigned short int p
 #if DEBUG_ENGINES
     print_debug(ES, stdout, CGREEN, COLOR_NORMAL, "    %s - Ready", engine->name);
 #endif
-}
 
-void engines_setup(long int now) {
-#if DEBUG_ENGINES
-    print_debug(ES, stdout, CPURPLE, COLOR_NORMAL, "INI");
-#endif
-    engine_setup("Front left 1", ENGINE_FRONT_LEFT, ENGINE_FRONT_LEFT_DIR, ENGINE_FRONT_LEFT_ENABLE);
-    engine_setup("Lateral left 2", ENGINE_LATERAL_LEFT, ENGINE_LATERAL_LEFT_DIR, ENGINE_LATERAL_LEFT_ENABLE);
-    engine_setup("Back left 3", ENGINE_BACK_LEFT, ENGINE_BACK_LEFT_DIR, ENGINE_BACK_LEFT_ENABLE);
-    engine_setup("Back right 4", ENGINE_BACK_RIGHT, ENGINE_BACK_RIGHT_DIR, ENGINE_BACK_RIGHT_ENABLE);
-    engine_setup("Lateral right 5", ENGINE_LATERAL_RIGHT, ENGINE_LATERAL_RIGHT_DIR, ENGINE_LATERAL_RIGHT_ENABLE);
-    engine_setup("Front right 6", ENGINE_FRONT_RIGHT, ENGINE_FRONT_RIGHT_DIR, ENGINE_FRONT_RIGHT_ENABLE);
-
-#if DEBUG_ENGINES
-    print_debug(ES, stdout, CPURPLE, COLOR_NORMAL, "DONE");
-#endif
 }
 
 void engine_move(const char* name, unsigned short int target) {
@@ -155,18 +158,18 @@ void engine_move(const char* name, unsigned short int target) {
         engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_RED, ENGINE_GEAR_FULL);
     } else if (target==ROVER_MOVE_LEFT) {
         engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_BLUE, ENGINE_GEAR_FULL);
-        engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
-        engine_set(&engines_config.engines[ENGINE_LATERAL_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
-        engine_set(&engines_config.engines[ENGINE_LATERAL_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
-        engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_BLUE, ENGINE_GEAR_FULL);
-        engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
-    } else if (target==ROVER_MOVE_RIGHT) {
-        engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_RED, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_LATERAL_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
         engine_set(&engines_config.engines[ENGINE_LATERAL_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
-        engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_BLUE, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_RED, ENGINE_GEAR_FULL);
+    } else if (target==ROVER_MOVE_RIGHT) {
+        engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_LATERAL_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
+        engine_set(&engines_config.engines[ENGINE_LATERAL_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
+        engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
     } else if (target==ROVER_LOOK_LEFT) {
         engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_BLUE, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_RED, ENGINE_GEAR_FULL);
@@ -175,12 +178,12 @@ void engine_move(const char* name, unsigned short int target) {
         engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
     } else if (target==ROVER_LOOK_RIGHT) {
-        engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_BLUE, ENGINE_GEAR_FULL);
-        engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_RED, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_LATERAL_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
         engine_set(&engines_config.engines[ENGINE_LATERAL_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
-        engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
-        engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_BLUE, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_RED, ENGINE_GEAR_FULL);
     } else if (target==ROVER_LOOK_UP) {
 #if OPTIMIZE
         Serial.println(F("Movemente not alowed: look up"));
@@ -196,15 +199,15 @@ void engine_move(const char* name, unsigned short int target) {
     } else if (target==ROVER_ROLL_LEFT) {
         engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
         engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
-        engine_set(&engines_config.engines[ENGINE_LATERAL_LEFT], ENGINE_BLUE, ENGINE_GEAR_FULL);
-        engine_set(&engines_config.engines[ENGINE_LATERAL_RIGHT], ENGINE_RED, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_LATERAL_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_LATERAL_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
         engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
     } else if (target==ROVER_ROLL_RIGHT) {
         engine_set(&engines_config.engines[ENGINE_FRONT_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
         engine_set(&engines_config.engines[ENGINE_FRONT_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
-        engine_set(&engines_config.engines[ENGINE_LATERAL_LEFT], ENGINE_RED, ENGINE_GEAR_FULL);
-        engine_set(&engines_config.engines[ENGINE_LATERAL_RIGHT], ENGINE_BLUE, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_LATERAL_LEFT], ENGINE_BLUE, ENGINE_GEAR_FULL);
+        engine_set(&engines_config.engines[ENGINE_LATERAL_RIGHT], ENGINE_RED, ENGINE_GEAR_FULL);
         engine_set(&engines_config.engines[ENGINE_BACK_LEFT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
         engine_set(&engines_config.engines[ENGINE_BACK_RIGHT], ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
     } else {
@@ -245,6 +248,69 @@ void engine_move(const char* name, unsigned short int target) {
     print_debug(ES, stdout, CGREEN, COLOR_NORMAL, "    %s - Ready", engine->name);
 #endif
 }
+
+// === SETUP === ==========================================================
+
+void engines_setup(long int now) {
+#if DEBUG_ENGINES
+    print_debug(ES, stdout, CPURPLE, COLOR_NORMAL, "INI");
+#endif
+    engine_setup("Front left 1", ENGINE_FRONT_LEFT, ENGINE_FRONT_LEFT_CW, ENGINE_FRONT_LEFT_DIR, ENGINE_FRONT_LEFT_ENABLE);
+    engine_setup("Lateral left 2", ENGINE_LATERAL_LEFT, ENGINE_LATERAL_LEFT_CW, ENGINE_LATERAL_LEFT_DIR, ENGINE_LATERAL_LEFT_ENABLE);
+    engine_setup("Back left 3", ENGINE_BACK_LEFT, ENGINE_BACK_LEFT_CW, ENGINE_BACK_LEFT_DIR, ENGINE_BACK_LEFT_ENABLE);
+    engine_setup("Back right 4", ENGINE_BACK_RIGHT, ENGINE_BACK_RIGHT_CW, ENGINE_BACK_RIGHT_DIR, ENGINE_BACK_RIGHT_ENABLE);
+    engine_setup("Lateral right 5", ENGINE_LATERAL_RIGHT, ENGINE_LATERAL_RIGHT_CW, ENGINE_LATERAL_RIGHT_DIR, ENGINE_LATERAL_RIGHT_ENABLE);
+    engine_setup("Front right 6", ENGINE_FRONT_RIGHT, ENGINE_FRONT_RIGHT_CW, ENGINE_FRONT_RIGHT_DIR, ENGINE_FRONT_RIGHT_ENABLE);
+
+#if DEBUG_ENGINES
+    print_debug(ES, stdout, CPURPLE, COLOR_NORMAL, "DONE");
+#endif
+
+    /*
+    // Engine tests
+    while (0) {
+        Serial.println("Sleeping...");
+        delay(600000);
+    }
+    if (0) {
+        EngineConfig *engine=&(engines_config.engines[ENGINE_LATERAL_RIGHT]);
+        while (1) {
+            Serial.println("STOP");
+            engine_set(engine, ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
+            delay(1000);
+            Serial.println("BLUE");
+            engine_set(engine, ENGINE_BLUE, ENGINE_GEAR_FULL);
+            delay(2000);
+            Serial.println("STOP");
+            engine_set(engine, ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
+            delay(1000);
+            Serial.println("RED");
+            engine_set(engine, ENGINE_RED, ENGINE_GEAR_FULL);
+            delay(2000);
+        }
+    }
+    while (0) {
+        Serial.println("STOP");
+        engine_move("", ROVER_MOVE_STOP);
+        delay(2000);
+        Serial.println("A");
+        engine_move("", ROVER_ROLL_LEFT);
+        delay(5000);
+        Serial.println("STOP");
+        engine_move("", ROVER_MOVE_STOP);
+        delay(2000);
+        Serial.println("B");
+        engine_move("", ROVER_ROLL_RIGHT);
+        delay(5000);
+        Serial.println("STOP");
+        engine_move("", ROVER_MOVE_STOP);
+        delay(30001);
+    }
+    */
+
+}
+
+
 
 // === LOOP === ===========================================================
 
