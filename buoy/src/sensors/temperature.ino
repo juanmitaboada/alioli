@@ -29,8 +29,9 @@ void temperature_setup(long int now) {
     sensorDS18B20.begin();
 
     // Set environment
-    buoy.environment.temperature1 = 0.0;
-    buoy.environment.temperature2 = 0.0;
+    buoy.environment.temp_main_battery = 0.0;
+    buoy.environment.temp_sea_water = 0.0;
+    buoy.environment.temp_engines_battery = 0.0;
 
     // Set local config
     temperature_config.nextevent=0;
@@ -48,7 +49,6 @@ void temperature_setup(long int now) {
 
 void temperature_loop(long int now) {
     const uint8_t *scrpd_raw = NULL;
-    float temperature1=0.0, temperature2=0.0;
 
     // Check temperature lookup
     if (temperature_config.nextevent<now) {
@@ -59,21 +59,17 @@ void temperature_loop(long int now) {
         // Instance to OneWire and DallasTemperature classes
         OneWire oneWireObject(PINOUT_ONEWIRE_BUS_PIN);
         DallasTemperature sensorDS18B20(&oneWireObject);
-        DeviceAddress temp1 = TEMPERATURE_SENSOR_1;
-        DeviceAddress temp2 = TEMPERATURE_SENSOR_2;
+        DeviceAddress temp_main_battery = TEMPERATURE_MAIN_BATTERY;
+        DeviceAddress temp_sea_water = TEMPERATURE_SEA_WATER;
 
         // Get temperature from the sensors
         sensorDS18B20.requestTemperatures();
-        temperature1 = sensorDS18B20.getTempC(temp1);
-        temperature2 = sensorDS18B20.getTempC(temp2);
+        buoy.environment.temp_main_battery = sensorDS18B20.getTempC(temp_main_battery);
+        buoy.environment.temp_sea_water = sensorDS18B20.getTempC(temp_sea_water);
         // temperature== -127.01 ===> ERROR
 
-        // Save temperature
-        buoy.environment.temperature1 = temperature1;
-        buoy.environment.temperature2 = temperature2;
-
+        print_debug(TL, stdout, CYELLOW, COLOR_NORMAL, "MAIN BATERY: %.2fºC - SEA WATER: %.2fºC", buoy.environment.temp_main_battery, buoy.environment.temp_sea_water);
 #if DEBUG_SENSORS_TEMPERATURE
-        print_debug(TL, stdout, CYELLOW, COLOR_NORMAL, "Temperature 1: %.2fºC - Temperature 2: %.2fºC", temperature1, temperature2);
 #endif
     }
 

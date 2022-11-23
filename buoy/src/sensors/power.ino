@@ -70,8 +70,10 @@ void power_setup(long int now) {
     }
 
     // Set environment
-    buoy.environment.voltage = 0.0;
-    buoy.environment.amperage = 0.0;
+    buoy.environment.voltage_main = 0.0;
+    buoy.environment.amperage_main = 0.0;
+    buoy.environment.voltage_external = 0.0;
+    buoy.environment.amperage_external = 0.0;
 
     // Set local config
     power_config.nextevent=0;
@@ -96,8 +98,8 @@ void power_loop(long int now) {
         power_config.nextevent = now+POWER_LOOKUP_MS;
 
         // Get power
-        voltage =  ina219.getBusVoltage_V()+ ( ina219.getShuntVoltage_mV() / 1000);
-        amperage = ina219.getCurrent_mA();
+        buoy.environment.voltage_main = ina219.getBusVoltage_V()+ ( ina219.getShuntVoltage_mV() / 1000);
+        buoy.environment.amperage_main = ina219.getCurrent_mA();
 
 #if DEBUG_SENSORS_POWER
         float shuntvoltage = 0;
@@ -119,10 +121,6 @@ void power_loop(long int now) {
         Serial.print(F("Power:         ")); Serial.print(power_mW); Serial.println(F(" mW"));
         Serial.println("");
 #endif
-
-        // Save temperature
-        buoy.environment.voltage = voltage;
-        buoy.environment.amperage = amperage;
     }
 
 }
