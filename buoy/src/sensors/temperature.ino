@@ -48,7 +48,7 @@ void temperature_setup(long int now) {
 // === LOOP === ================================================================================
 
 void temperature_loop(long int now) {
-    const uint8_t *scrpd_raw = NULL;
+    // const uint8_t *scrpd_raw = NULL;
 
     // Check temperature lookup
     if (temperature_config.nextevent<now) {

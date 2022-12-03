@@ -3,14 +3,13 @@
 
 // System Identification
 #define SYSNAME "Buoy"
-#define VERSION "1.0"
+#define VERSION "1.1"
 
 #define MANAGER_HOST "manager.salmonete.com"
 #define MANAGER_PORT 80
 #define MANAGER_URI "/register.php"
 
 #define EXTERNAL_PORT 3814
-#define EXTERNAL_PASSWORD "thisismypassword"
 
 #define RESET_MODEM_AFTER_ERRORS 10
 #define RESET_RS485_AFTER_ERRORS 10

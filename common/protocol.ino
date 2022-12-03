@@ -141,7 +141,10 @@ uint16_t protocol_kind_size(uint8_t kind) {
 
 // Pack an Alioli Package to be sent
 unsigned short int protocol_pack(AlioliProtocol *package, char **answer, size_t *answer_size, size_t *answer_allocated) {
-    size_t temp_answer_size=0, until_payload=0, expected=*answer_size + package->payload_size + ALIOLI_PROTOCOL_SIZE_BASE;
+    size_t temp_answer_size=0, until_payload=0;
+#if ALIOLI_ASSERTS
+    size_t expected=*answer_size + package->payload_size + ALIOLI_PROTOCOL_SIZE_BASE;
+#endif
 
     // Make sure it includes Alioli Protocol Header
     package->header = ALIOLI_PROTOCOL_MAGIC_HEADER;

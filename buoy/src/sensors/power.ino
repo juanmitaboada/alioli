@@ -89,7 +89,7 @@ void power_setup(long int now) {
 // === LOOP === ================================================================================
 
 void power_loop(long int now) {
-    float voltage=0.0, amperage=0.0;
+    // float voltage=0.0, amperage=0.0;
 
     // Check power lookup
     if (power_config.nextevent<now) {

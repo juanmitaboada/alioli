@@ -143,7 +143,7 @@ void monitor_setup(long int now) {
 void monitor_loop(long int now) {
 #if MODULE_MONITOR
 #if MODULE_MONITOR_LIGHTS
-    unsigned short int red_on=0;
+    // unsigned short int red_on=0;
 
     // Switch lights
     switch_light(&monitor_config.onboard, ONBOARD_LIGHT_ON_MS, ONBOARD_LIGHT_OFF_MS, now);

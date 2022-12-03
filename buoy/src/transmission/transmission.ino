@@ -37,6 +37,162 @@ unsigned short int modem_getmsg(char **buf, size_t *buf_size, size_t *buf_alloca
 }
 
 unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_allocated) {
+    char *cmd=NULL, *json=NULL, tstr[300]="", *pointer=NULL;
+    size_t cmd_size=0, cmd_allocated=0, json_size=0, json_allocated=0;
+    unsigned short int error=0;
+
+    // Send our IPADDR
+    sprintf(tstr, "AT+CHTTPACT=\"%s\",%d\r\n", MANAGER_HOST, MANAGER_PORT);
+    error = !modem_cmd(tstr, "+CHTTPACT: REQUEST", buf, buf_size, buf_allocated, 2000, 0);
+
+    if (!error) {
+
+        // JSON header
+        strcat_realloc(&json, &json_size, &json_allocated, "{", 1, __FILE__, __LINE__);
+        // JSON Meta
+        sprintf(tstr, "\"name\":\"%s\",\"version\":\"%s\",\"build\":\"%s\",\"ip\":\"%s\",\"port\":%d,\"data\": {", SYSNAME, VERSION, BUILD_VERSION, transmission_config.ipaddr, EXTERNAL_PORT);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+
+        // === JSON Data ===
+        // Rov Altitude
+        sprintf(tstr, "\"ra\": \"%.1f\",", rov.environment.altitude);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Pressure
+        sprintf(tstr, "\"rp\": \"%.1f\",", rov.environment.pressure);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Temp Gyro
+        sprintf(tstr, "\"rtg\": \"%.1f\",", rov.environment.temp_gyro);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Temp Main Battery
+        sprintf(tstr, "\"rtmb\": \"%.1f\",", rov.environment.temp_main_battery);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Temp Engines Battery
+        sprintf(tstr, "\"rteb\": \"%.1f\",", rov.environment.temp_engines_battery);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Temp Sea Water
+        sprintf(tstr, "\"rtsw\": \"%.1f\",", rov.environment.temp_sea_water);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Temp BMP
+        sprintf(tstr, "\"rtb\": \"%.1f\",", rov.environment.temp_bmp);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Main Voltage
+        sprintf(tstr, "\"rmv\": \"%.1f\",", rov.environment.voltage_main);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Main Amperage
+        sprintf(tstr, "\"rma\": \"%.1f\",", rov.environment.amperage_main);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Engines Voltage
+        sprintf(tstr, "\"rev\": \"%.1f\",", rov.environment.voltage_external);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Rov Engines Amperage
+        sprintf(tstr, "\"rea\": \"%.1f\",", rov.environment.amperage_external);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+
+        // Buoy Temp Main Battery
+        sprintf(tstr, "\"btmb\": \"%.1f\",", buoy.environment.temp_main_battery);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Buoy Temp Sea Water
+        sprintf(tstr, "\"btsw\": \"%.1f\",", buoy.environment.temp_sea_water);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Buoy Main Voltage
+        sprintf(tstr, "\"bmv\": \"%.1f\",", buoy.environment.voltage_main);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Buoy Main Amperage
+        sprintf(tstr, "\"bma\": \"%.1f\",", buoy.environment.amperage_main);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+
+        // JSON tail
+        strcat_realloc(&json, &json_size, &json_allocated, "\"x\":0}}", 7, __FILE__, __LINE__);
+
+        // Prepare request
+        sprintf(tstr, "POST http://%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: Alioli Buoy v%s\r\nAlioli-Key: %s\r\nAccept: text/html\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: %u\r\n\r\n", MANAGER_HOST, MANAGER_URI, MANAGER_HOST, VERSION, HTTP_KEY, json_size);
+        strcat_realloc(&cmd, &cmd_size, &cmd_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+
+        // Attach JSON
+        if (json) {
+            strcat_realloc(&cmd, &cmd_size, &cmd_allocated, json, json_size, __FILE__, __LINE__);
+            free(json);
+            json=NULL;
+            json_size=0;
+            json_allocated=0;
+        }
+
+        // Close string and add "\0"
+        sprintf(tstr, "");
+        strcat_realloc(&cmd, &cmd_size, &cmd_allocated, tstr, strlen(tstr) + 1, __FILE__, __LINE__);
+
+        // print_debug("TRm", stdout, CBLUE, 0, ">");
+        // print_asbin(cmd, cmd_size);
+        error = !modem_cmd(cmd, "OK", buf, buf_size, buf_allocated, 2000, 0);
+        if (!error) {
+
+            // Check if header already came up
+            if (!bistrstr(*buf, *buf_size, "HTTP/1.1 200 OK", 15)) {
+                // Wait for the server to answer
+                error = !modem_cmd(cmd, "+CHTTPACT:", buf, buf_size, buf_allocated, 2000, 0);
+            }
+
+            // Initialize
+            pointer = bistrstr(*buf, *buf_size, "HTTP/1.1 200 OK", 15);
+            if (pointer) {
+                pointer = bstrstr(pointer, *buf_size-(pointer-*buf), "\r\n\r\n", 4);
+                if (pointer) {
+                    // Advance pointer to BODY position
+                    pointer += 4;
+                    pointer = bistrstr(pointer, *buf_size-(pointer-*buf), "OK", 2);
+                    if (!pointer) {
+                        print_debug("TRsm", stderr, CRED, 0, "UNEXPECTED HTTP ANSWER: remote system didn't answer with OK! :-(");
+                        error = 1;
+                    }
+                } else {
+                    print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: body not found!");
+                    error = 1;
+                }
+            } else {
+                print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: header not found or not \"HTTP/1.1 200 OK\"!");
+                error = 1;
+            }
+
+            /*
+            if (!error) {
+                *buf_size = 0;
+                while (!*buf_size) {
+#if DEBUG_MODEM_SETUP
+                    print_debug("TRsm", stdout, CCYAN, 0, "    > Waiting for HTTP session to finish...");
+#endif
+                    serial_recv(MODEM_SERIAL, buf, buf_size, buf_allocated, 1000, 500, 0);
+                }
+                if (!bistrstr(*buf, *buf_size, "+CHTTPACT: 0", 12)) {
+                    print_debug("TRsm", stderr, CRED, 0, "Socket didn't finish tranmission");
+                    error = 1;
+                }
+            }*/
+
+            // Show buffer if some error happened
+            if (error) {
+                print_asbin(*buf, *buf_size, stderr);
+                print_ashex(*buf, *buf_size, stderr);
+            }
+        }
+
+        // Free memory
+        if (cmd) {
+            free(cmd);
+            cmd=NULL;
+            cmd_size=0;
+            cmd_allocated=0;
+        }
+
+#if VERIFY_REMOTE_SERVER_ANSWER==0
+        error = 0;
+#endif
+    }
+
+    // Return if some error happened
+    return error;
+}
+
+unsigned short int modem_send_our_data(char **buf, size_t *buf_size, size_t *buf_allocated) {
     char cmd[400]="", *pointer=NULL;
     unsigned short int error=0;
 
