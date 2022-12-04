@@ -68,7 +68,7 @@ void temperature_loop(long int now) {
         buoy.environment.temp_sea_water = sensorDS18B20.getTempC(temp_sea_water);
         // temperature== -127.01 ===> ERROR
 
-        print_debug(TL, stdout, CYELLOW, COLOR_NORMAL, "MAIN BATERY: %.2fºC - SEA WATER: %.2fºC", buoy.environment.temp_main_battery, buoy.environment.temp_sea_water);
+        // print_debug(TL, stdout, CYELLOW, COLOR_NORMAL, "MAIN BATERY: %.2fºC - SEA WATER: %.2fºC", buoy.environment.temp_main_battery, buoy.environment.temp_sea_water);
 #if DEBUG_SENSORS_TEMPERATURE
 #endif
     }
