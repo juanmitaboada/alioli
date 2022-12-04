@@ -6,8 +6,13 @@
 // General config
 #define QUICK_START 0
 #define RTC 1
-#define DUMMY_GPS 1
+#define DUMMY_GPS 0
 #define OPTIMIZE 0
+
+// HTTP Client Configuration
+#define HTTP_POST 1
+#define HTTP_LINK_WAIT_FIRST 10000
+#define HTTP_LINK_WAIT 2000
 
 // MODULES
 #define MODULE_MONITOR 1
@@ -17,7 +22,7 @@
 // Debugger
 #define DEBUG
 #define DEBUG_MAIN 0
-#define DEBUG_MODEM_SETUP 0
+#define DEBUG_MODEM_SETUP 1
 #define DEBUG_TRANSMISSION 0
 #define DEBUG_TRANSMISSION_MSG 0
 #define DEBUG_EXPECTED 0

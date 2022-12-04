@@ -37,16 +37,16 @@ unsigned short int modem_getmsg(char **buf, size_t *buf_size, size_t *buf_alloca
 }
 
 unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_allocated) {
-    char *cmd=NULL, *json=NULL, tstr[300]="", *pointer=NULL;
+    char *cmd=NULL, *json=NULL, tstr[400]="", *pointer=NULL;
     size_t cmd_size=0, cmd_allocated=0, json_size=0, json_allocated=0;
     unsigned short int error=0;
 
     // Send our IPADDR
     sprintf(tstr, "AT+CHTTPACT=\"%s\",%d\r\n", MANAGER_HOST, MANAGER_PORT);
-    error = !modem_cmd(tstr, "+CHTTPACT: REQUEST", buf, buf_size, buf_allocated, 2000, 0);
+    error = !modem_cmd(tstr, "+CHTTPACT: REQUEST", buf, buf_size, buf_allocated, 10000, 0);
 
     if (!error) {
-
+#if HTTP_POST
         // JSON header
         strcat_realloc(&json, &json_size, &json_allocated, "{", 1, __FILE__, __LINE__);
         // JSON Meta
@@ -54,51 +54,59 @@ unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_a
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
 
         // === JSON Data ===
+        // Rov Ready
+        sprintf(tstr, "\"rr\": %u,", transmission_config.rs485_ready);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+
         // Rov Altitude
-        sprintf(tstr, "\"ra\": \"%.1f\",", rov.environment.altitude);
+        sprintf(tstr, "\"ra\": %.1f,", rov.environment.altitude);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Pressure
-        sprintf(tstr, "\"rp\": \"%.1f\",", rov.environment.pressure);
+        sprintf(tstr, "\"rp\": %.1f,", rov.environment.pressure);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Temp Gyro
-        sprintf(tstr, "\"rtg\": \"%.1f\",", rov.environment.temp_gyro);
+        sprintf(tstr, "\"rtg\": %.1f,", rov.environment.temp_gyro);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Temp Main Battery
-        sprintf(tstr, "\"rtmb\": \"%.1f\",", rov.environment.temp_main_battery);
+        sprintf(tstr, "\"rtmb\": %.1f,", rov.environment.temp_main_battery);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Temp Engines Battery
-        sprintf(tstr, "\"rteb\": \"%.1f\",", rov.environment.temp_engines_battery);
+        sprintf(tstr, "\"rteb\": %.1f,", rov.environment.temp_engines_battery);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Temp Sea Water
-        sprintf(tstr, "\"rtsw\": \"%.1f\",", rov.environment.temp_sea_water);
+        sprintf(tstr, "\"rtsw\": %.1f,", rov.environment.temp_sea_water);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Temp BMP
-        sprintf(tstr, "\"rtb\": \"%.1f\",", rov.environment.temp_bmp);
+        sprintf(tstr, "\"rtb\": %.1f,", rov.environment.temp_bmp);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Main Voltage
-        sprintf(tstr, "\"rmv\": \"%.1f\",", rov.environment.voltage_main);
+        sprintf(tstr, "\"rmv\": %.1f,", rov.environment.voltage_main);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Main Amperage
-        sprintf(tstr, "\"rma\": \"%.1f\",", rov.environment.amperage_main);
+        sprintf(tstr, "\"rma\": %.1f,", rov.environment.amperage_main);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Engines Voltage
-        sprintf(tstr, "\"rev\": \"%.1f\",", rov.environment.voltage_external);
+        sprintf(tstr, "\"rev\": %.1f,", rov.environment.voltage_external);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Rov Engines Amperage
-        sprintf(tstr, "\"rea\": \"%.1f\",", rov.environment.amperage_external);
+        sprintf(tstr, "\"rea\": %.1f,", rov.environment.amperage_external);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+
+        // Buoy Millis
+        sprintf(tstr, "\"bm\": %lu,", millis());
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
 
         // Buoy Temp Main Battery
-        sprintf(tstr, "\"btmb\": \"%.1f\",", buoy.environment.temp_main_battery);
+        sprintf(tstr, "\"btmb\": %.1f,", buoy.environment.temp_main_battery);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Buoy Temp Sea Water
-        sprintf(tstr, "\"btsw\": \"%.1f\",", buoy.environment.temp_sea_water);
+        sprintf(tstr, "\"btsw\": %.1f,", buoy.environment.temp_sea_water);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Buoy Main Voltage
-        sprintf(tstr, "\"bmv\": \"%.1f\",", buoy.environment.voltage_main);
+        sprintf(tstr, "\"bmv\": %.1f,", buoy.environment.voltage_main);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
         // Buoy Main Amperage
-        sprintf(tstr, "\"bma\": \"%.1f\",", buoy.environment.amperage_main);
+        sprintf(tstr, "\"bma\": %.1f,", buoy.environment.amperage_main);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
 
         // JSON tail
@@ -120,61 +128,18 @@ unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_a
         // Close string and add "\0"
         sprintf(tstr, "");
         strcat_realloc(&cmd, &cmd_size, &cmd_allocated, tstr, strlen(tstr) + 1, __FILE__, __LINE__);
-
-        // print_debug("TRm", stdout, CBLUE, 0, ">");
-        // print_asbin(cmd, cmd_size);
-        error = !modem_cmd(cmd, "OK", buf, buf_size, buf_allocated, 2000, 0);
-        if (!error) {
-
-            // Check if header already came up
-            if (!bistrstr(*buf, *buf_size, "HTTP/1.1 200 OK", 15)) {
-                // Wait for the server to answer
-                error = !modem_cmd(cmd, "+CHTTPACT:", buf, buf_size, buf_allocated, 2000, 0);
-            }
-
-            // Initialize
-            pointer = bistrstr(*buf, *buf_size, "HTTP/1.1 200 OK", 15);
-            if (pointer) {
-                pointer = bstrstr(pointer, *buf_size-(pointer-*buf), "\r\n\r\n", 4);
-                if (pointer) {
-                    // Advance pointer to BODY position
-                    pointer += 4;
-                    pointer = bistrstr(pointer, *buf_size-(pointer-*buf), "OK", 2);
-                    if (!pointer) {
-                        print_debug("TRsm", stderr, CRED, 0, "UNEXPECTED HTTP ANSWER: remote system didn't answer with OK! :-(");
-                        error = 1;
-                    }
-                } else {
-                    print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: body not found!");
-                    error = 1;
-                }
-            } else {
-                print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: header not found or not \"HTTP/1.1 200 OK\"!");
-                error = 1;
-            }
-
-            /*
-            if (!error) {
-                *buf_size = 0;
-                while (!*buf_size) {
-#if DEBUG_MODEM_SETUP
-                    print_debug("TRsm", stdout, CCYAN, 0, "    > Waiting for HTTP session to finish...");
+#else
+        // Use static string
+        cmd = tstr;
+        // Fill CMD
+        sprintf(cmd, "GET http://%s%s?name=%s&version=%s&build=%s&ip=%s&port=%d HTTP/1.1\r\nHost: %s\r\nUser-Agent: Alioli Buoy v%s\r\nAlioli-Key: %s\r\nAccept: text/html\r\nConnection: close\r\n\r\n", MANAGER_HOST, MANAGER_URI, SYSNAME, VERSION, BUILD_VERSION, transmission_config.ipaddr, EXTERNAL_PORT, MANAGER_HOST, VERSION, HTTP_KEY);
 #endif
-                    serial_recv(MODEM_SERIAL, buf, buf_size, buf_allocated, 1000, 500, 0);
-                }
-                if (!bistrstr(*buf, *buf_size, "+CHTTPACT: 0", 12)) {
-                    print_debug("TRsm", stderr, CRED, 0, "Socket didn't finish tranmission");
-                    error = 1;
-                }
-            }*/
 
-            // Show buffer if some error happened
-            if (error) {
-                print_asbin(*buf, *buf_size, stderr);
-                print_ashex(*buf, *buf_size, stderr);
-            }
-        }
+        // Send request
+        // print_debug("TRm", stdout, CBLUE, 0, "> %s", cmd);
+        error = !modem_cmd(cmd, "OK", buf, buf_size, buf_allocated, 2000, 0);
 
+#if HTTP_POST
         // Free memory
         if (cmd) {
             free(cmd);
@@ -182,34 +147,14 @@ unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_a
             cmd_size=0;
             cmd_allocated=0;
         }
-
-#if VERIFY_REMOTE_SERVER_ANSWER==0
-        error = 0;
 #endif
-    }
 
-    // Return if some error happened
-    return error;
-}
-
-unsigned short int modem_send_our_data(char **buf, size_t *buf_size, size_t *buf_allocated) {
-    char cmd[400]="", *pointer=NULL;
-    unsigned short int error=0;
-
-    // Send our IPADDR
-    sprintf(cmd, "AT+CHTTPACT=\"%s\",%d\r\n", MANAGER_HOST, MANAGER_PORT);
-    error = !modem_cmd(cmd, "+CHTTPACT: REQUEST", buf, buf_size, buf_allocated, 2000, 0);
-
-    if (!error) {
-        sprintf(cmd, "GET http://%s%s?name=%s&version=%s&build=%s&ip=%s&port=%d HTTP/1.1\r\nHost: %s\r\nUser-Agent: Alioli Buoy v%s\r\nAlioli-Key: %s\r\nAccept: text/html\r\nConnection: close\r\n\r\n", MANAGER_HOST, MANAGER_URI, SYSNAME, VERSION, BUILD_VERSION, transmission_config.ipaddr, EXTERNAL_PORT, MANAGER_HOST, VERSION, HTTP_KEY);
-        // print_debug("TRm", stdout, CBLUE, 0, "> %s", cmd);
-        error = !modem_cmd(cmd, "OK", buf, buf_size, buf_allocated, 2000, 0);
         if (!error) {
 
             // Check if header already came up
             if (!bistrstr(*buf, *buf_size, "HTTP/1.1 200 OK", 15)) {
                 // Wait for the server to answer
-                error = !modem_cmd(cmd, "+CHTTPACT:", buf, buf_size, buf_allocated, 2000, 0);
+                error = !modem_cmd(tstr, "+CHTTPACT:", buf, buf_size, buf_allocated, 2000, 0);
             }
 
             // Initialize
@@ -221,15 +166,27 @@ unsigned short int modem_send_our_data(char **buf, size_t *buf_size, size_t *buf
                     pointer += 4;
                     pointer = bistrstr(pointer, *buf_size-(pointer-*buf), "OK", 2);
                     if (!pointer) {
+#if OPTIMIZE
+                        Serial.println(F("UNEXPECTED HTTP ANSWER: remote system didn't answer with OK! :-("));
+#else
                         print_debug("TRsm", stderr, CRED, 0, "UNEXPECTED HTTP ANSWER: remote system didn't answer with OK! :-(");
+#endif
                         error = 1;
                     }
                 } else {
+#if OPTIMIZE
+                    Serial.println(F("INVALID HTTP: body not found!"));
+#else
                     print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: body not found!");
+#endif
                     error = 1;
                 }
             } else {
+#if OPTIMIZE
+                Serial.println(F("INVALID HTTP: header not found or not \"HTTP/1.1 200 OK\"!"));
+#else
                 print_debug("TRsm", stderr, CRED, 0, "INVALID HTTP: header not found or not \"HTTP/1.1 200 OK\"!");
+#endif
                 error = 1;
             }
 
@@ -280,17 +237,29 @@ unsigned short int modem_setup() {
     // Show information
     tranmission_switch_led(&led);
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+    Serial.println(F("MODEM=VERBOSE "));
+#else
     print_debug(NULL, stdout, CBLUE, COLOR_NOHEAD_NOTAIL, "MODEM=VERBOSE ");
 #endif
+#endif
 #if MODEM_SIMULATED==1
+#if OPTIMIZE
+    Serial.println(F("MODEM=SIMULATED "));
+#else
     print_debug(NULL, stderr, CYELLOW, COLOR_NOHEAD_NOTAIL, "MODEM=SIMULATED ");
+#endif
 #endif
 
 
     // Start CMD Mode
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("+++"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "+++");
+#endif
 #endif
         // Make sure we are online
         tranmission_switch_led(&led);
@@ -310,7 +279,11 @@ unsigned short int modem_setup() {
         buf_size=0;
         for (retry=5; retry>0; retry--) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+            Serial.println(F("Waiting for module to RESET"));
+#else
             print_debug("TRsm", stdout, CBLUE, 0, "Waiting for module to RESET %d", retry);
+#endif
 #endif
             tranmission_switch_led(&led);
             if (serial_recv(MODEM_SERIAL, &buf, &buf_size, &buf_allocated, 10000, 1000, 0)) {
@@ -319,12 +292,20 @@ unsigned short int modem_setup() {
                 }
             } else {
                 retry = 0;
+#if OPTIMIZE
+                Serial.println(F("Error while reading Modem serial port"));
+#else
                 print_debug("TRsm", stderr, CRED, 0, "Error while reading Modem serial port");
+#endif
                 break;
             }
         }
         if (!retry) {
+#if OPTIMIZE
+            Serial.println(F("Error while reading Modem serial port"));
+#else
             print_debug("TRsm", stderr, CRED, 0, "Error while reading Modem serial port");
+#endif
         }
     }
 
@@ -332,7 +313,11 @@ unsigned short int modem_setup() {
     // Get back from any process
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("CTRL+Z"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "CTRL+Z");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
@@ -342,7 +327,11 @@ unsigned short int modem_setup() {
     // Reset modem
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("RESET"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "RESET");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
@@ -351,7 +340,11 @@ unsigned short int modem_setup() {
     // Remove ECHO
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("ECHO OFF"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "ECHO OFF");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("ATE0\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 100);
@@ -363,14 +356,22 @@ unsigned short int modem_setup() {
     // Check AT
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("CHECK AT"));;
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK AT");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("AT\r\n", "OK", &buf, &buf_size, &buf_allocated, 500, 0);
         if (!error) {
             if (!bistrstr(buf, buf_size, "OK", 2)) {
                 // No answer to PIN status
+#if OPTIMIZE
+                Serial.println(F("AT command has failed!"));
+#else
                 print_debug("TRsm", stderr, CRED, 0, "AT command has failed!");
+#endif
                 if (buf_size) {
                     print_asbin(buf, buf_size, stderr);
                     print_ashex(buf, buf_size, stderr);
@@ -386,7 +387,11 @@ unsigned short int modem_setup() {
     // RESET Module
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("Reset MODULE (10 sec)"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "Reset MODULE (10 sec)");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("AT+CFUN=6\r\n", "OK", &buf, &buf_size, &buf_allocated, 10000, 0);
@@ -395,7 +400,11 @@ unsigned short int modem_setup() {
     // Startup Module
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("Enable MODULE (15 sec)"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "Enable MODULE (15 sec)");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("AT+CFUN=1\r\n", "OK", &buf, &buf_size, &buf_allocated, 15000, 0);
@@ -404,7 +413,11 @@ unsigned short int modem_setup() {
     // Reset modem
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("RESET"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "RESET");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("ATZ\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
@@ -413,7 +426,11 @@ unsigned short int modem_setup() {
     // Remove ECHO
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("ECHO OFF"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "ECHO OFF");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("ATE0\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 100);
@@ -422,7 +439,11 @@ unsigned short int modem_setup() {
     // Check AT
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("CHECK AT"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK AT");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("AT\r\n", "OK", &buf, &buf_size, &buf_allocated, 500, 0);
@@ -431,7 +452,11 @@ unsigned short int modem_setup() {
     // Check PIN status
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("CHECK PIN STATUS"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "CHECK PIN STATUS");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("AT+CPIN?\r\n", NULL, &buf, &buf_size, &buf_allocated, 1000, 0);
@@ -439,7 +464,11 @@ unsigned short int modem_setup() {
             sprintf(cmd, "+CPIN: READY");
             if (bistrstr(buf, buf_size, cmd, strlen(cmd))) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+                Serial.println(F("PIN OK"));
+#else
                 print_debug("TRsm", stdout, CCYAN, 0, "PIN OK");
+#endif
 #endif
                 pin_ready = 1;
             } else {
@@ -447,13 +476,21 @@ unsigned short int modem_setup() {
                 sprintf(cmd, "+CPIN: SIM PIN");
                 if (!bistrstr(buf, buf_size, cmd, strlen(cmd))) {
                     // No answer to PIN status
+#if OPTIMIZE
+                    Serial.println(F("NO PING REQUESTED"));
+#else
                     print_debug("TRsm", stderr, CRED, 0, "NO PING REQUESTED");
+#endif
                     print_asbin(buf, buf_size, stderr);
                     print_ashex(buf, buf_size, stderr);
                     error = 1;
 #if DEBUG_MODEM_SETUP
                 } else {
+#if OPTIMIZE
+                    Serial.println(F("PIN REQUESTED"));
+#else
                     print_debug("TRsm", stdout, CCYAN, 0, "PIN REQUESTED");
+#endif
 #endif
                 }
             }
@@ -463,7 +500,11 @@ unsigned short int modem_setup() {
     // Authenticate
     if (!error && !pin_ready) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("SEND PIN"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "SEND PIN");
+#endif
 #endif
         sprintf(cmd, "AT+CPIN=%d\r\n", MODEM_PIN);
         tranmission_switch_led(&led);
@@ -476,10 +517,18 @@ unsigned short int modem_setup() {
                 sprintf(cmd, "+CME ERROR: incorrect password");
                 if (bistrstr(buf, buf_size, cmd, strlen(cmd))) {
                     // PIN not accepted
+#if OPTIMIZE
+                    Serial.println(F("Incorrect password!"));
+#else
                     print_debug("TRsm", stderr, CYELLOW, 0, "Incorrect password!");
+#endif
                 } else {
                     // Error while setting PIN
+#if OPTIMIZE
+                    Serial.println(F("PIN KO"));
+#else
                     print_debug("TRsm", stderr, CRED, 0, "PIN KO");
+#endif
                     print_asbin(buf, buf_size, stderr);
                     print_ashex(buf, buf_size, stderr);
                 }
@@ -487,7 +536,11 @@ unsigned short int modem_setup() {
 #if DEBUG_MODEM_SETUP
             } else {
                 // PIN Ready, we can keep going
+#if OPTIMIZE
+                Serial.println(F("PIN AUTH OK"));
+#else
                 print_debug("TRsm", stdout, CCYAN, 0, "PIN AUTH OK");
+#endif
 #endif
             }
         }
@@ -496,7 +549,11 @@ unsigned short int modem_setup() {
     // Delete ALL SMS
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("AT+CMGD=1,4  (Delete ALL SMSs)"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "AT+CMGD=1,4  (Delete ALL SMSs)");
+#endif
 #endif
         tranmission_switch_led(&led);
         modem_cmd("AT+CMGD=1,4\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
@@ -505,7 +562,11 @@ unsigned short int modem_setup() {
     // Set CIPMODE
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("CIPMODE=1"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "CIPMODE=1");
+#endif
 #endif
         tranmission_switch_led(&led);
         modem_cmd("AT+CIPMODE=1\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 500);
@@ -514,7 +575,11 @@ unsigned short int modem_setup() {
     // Start GPRS
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("Start GPRS"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "Start GPRS");
+#endif
 #endif
 
         // Go as usually
@@ -535,12 +600,20 @@ unsigned short int modem_setup() {
                         buf_size=0;
                         for (retry=10; retry>0; retry--) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+                            Serial.println(F("Waiting for link"));
+#else
                             print_debug("TRsm", stdout, CBLUE, 0, "Waiting for link %d", retry);
+#endif
 #endif
                             tranmission_switch_led(&led);
                             if (!serial_recv(MODEM_SERIAL, &buf, &buf_size, &buf_allocated, 1000, 500, 0)) {
                                 retry = 0;
+#if OPTIMIZE
+                                Serial.println(F("Error while reading serial port"));
+#else
                                 print_debug("TRsm", stderr, CRED, 0, "Error while reading serial port");
+#endif
                                 break;
                             } else if (buf_size) {
                                 // New data arrived
@@ -557,7 +630,11 @@ unsigned short int modem_setup() {
                                 sprintf(cmd, "\r\n+IP ERROR: Network is already opened");
                                 if (!bistrstr(buf, buf_size, cmd, strlen(cmd))) {
                                     // Error while starting GPRS
+#if OPTIMIZE
+                                    Serial.println(F("NETOPEN has failed!"));
+#else
                                     print_debug("TRsm", stderr, CRED, 0, "NETOPEN has failed!");
+#endif
                                     print_asbin(buf, buf_size, stderr);
                                     print_ashex(buf, buf_size, stderr);
                                     error = 1;
@@ -570,7 +647,11 @@ unsigned short int modem_setup() {
 
             } else {
                 // Error while starting GPRS
+#if OPTIMIZE
+                Serial.println(F("NETOPEN got unexpeced answer"));
+#else
                 print_debug("TRsm", stderr, CRED, 0, "NETOPEN got unexpeced answer");
+#endif
                 print_asbin(buf, buf_size, stderr);
                 print_ashex(buf, buf_size, stderr);
                 error = 1;
@@ -584,7 +665,11 @@ unsigned short int modem_setup() {
     // Get IPADDR
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("Get IPDDR"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "Get IPDDR");
+#endif
 #endif
         tranmission_switch_led(&led);
         error = !modem_cmd("AT+IPADDR\r\n", NULL, &buf, &buf_size, &buf_allocated, 500, 0);
@@ -608,24 +693,40 @@ unsigned short int modem_setup() {
                 if (!error) {
                     if (i<16) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+                        Serial.println(F("Got IPADDR"));
+#else
                         print_debug("TRsm", stdout, CCYAN, 0, "Got IPDDR: %s", transmission_config.ipaddr);
 #endif
+#endif
                     } else {
+#if OPTIMIZE
+                        Serial.println(F("Couldn't read IPADDR!"));
+#else
                         print_debug("TRsm", stderr, CYELLOW, 0, "Couldn't read IPADDR!");
+#endif
                         transmission_config.ipaddr[0] = 0;
                         print_asbin(buf, buf_size, stderr);
                         print_ashex(buf, buf_size, stderr);
                         error = 1;
                     }
                 } else {
+#if OPTIMIZE
+                    Serial.println(F("IPADDR seems to be too long!"));
+#else
                     print_debug("TRsm", stderr, CYELLOW, 0, "IPADDR seems to be too long! (%d bytes is bigger than max expected 16 bytes)", buf_size - strlen(cmd));
+#endif
                     print_asbin(buf, buf_size, stderr);
                     print_ashex(buf, buf_size, stderr);
                     transmission_config.ipaddr[0] = 0;
                     error = 1;
                 }
             } else {
+#if OPTIMIZE
+                Serial.println(F("Didn't get IPADDR!"));
+#else
                 print_debug("TRsm", stderr, CYELLOW, 0, "Didn't get IPADDR!");
+#endif
                 print_asbin(buf, buf_size, stderr);
                 print_ashex(buf, buf_size, stderr);
                 error = 1;
@@ -637,13 +738,23 @@ unsigned short int modem_setup() {
     // Send our IPADDR
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("Send our IPADDR"));
+#else
         print_debug("TRm", stdout, CBLUE, 0, "Send our IPADDR");
 #endif
+#endif
+
+        // Set next event
         tranmission_switch_led(&led);
         error = modem_send_our_ip(&buf, &buf_size, &buf_allocated);
 #if DEBUG_MODEM_SETUP
         if (!error) {
+#if OPTIMIZE
+            Serial.println(F("Our IP Address has been registered SUCESSFULLY"));
+#else
             print_debug("TRsm", stdout, CCYAN, 0, "Our IP Address has been registered SUCESSFULLY");
+#endif
         }
 #endif
     }
@@ -651,7 +762,11 @@ unsigned short int modem_setup() {
     // Open listening socket
     if (!error) {
 #if DEBUG_MODEM_SETUP
+#if OPTIMIZE
+        Serial.println(F("Open socket"));
+#else
         print_debug("TRsm", stdout, CBLUE, 0, "Open socket");
+#endif
 #endif
 
         // Go as usually
@@ -663,7 +778,11 @@ unsigned short int modem_setup() {
             tranmission_switch_led(&led);
             if (modem_cmd("AT+SERVERSTART?\r\n", cmd, &buf, &buf_size, &buf_allocated, 500, 0)) {
                 // Server is UP
+#if OPTIMIZE
+                Serial.println(F("MODEM=..."));
+#else
                 print_debug(NULL, stdout, CWHITE, COLOR_NOHEAD_NOTAIL, "MODEM=%s:%d ", transmission_config.ipaddr, EXTERNAL_PORT);
+#endif
                 transmission_config.modem_ready = 1;
                 transmission_config.modem_errors = 0;
             }
@@ -695,7 +814,11 @@ unsigned short int modem_gps(char **buf, size_t *buf_size, size_t *buf_allocated
     error = !modem_cmd("AT+CGPSINFO\r\n", "+CGPSINFO: ", buf, buf_size, buf_allocated, 500, 0);
     if (!error) {
 #if DUMMY_GPS
+#if OPTIMIZE
+        Serial.println(F("Using DUMMY GPS! (29.4 -13.51 | 29.4N 13.51W)"));
+#else
         print_debug("TRgps", stdout, CYELLOW, 0, "Using DUMMY GPS! (29.4 -13.51 | 29.4N 13.51W)");
+#endif
 #if DEBUG_TRANSMISSION
         // Show what we got
         // print_asbin(*buf, *buf_size, stderr);
@@ -849,7 +972,11 @@ unsigned short int rs485_setup() {
     // sprintf(temp, "%d - CONNECT\r\n", millis());
     if (rs485_cmd("PING", "PONG", &buf, &buf_size, &buf_allocated, 2000)) {
 #if DEBUG_TRANSMISSION
+#if OPTIMIZE
+        Serial.println(F("RS485 "));
+#else
         print_debug("TRsr", stdout, CCYAN, COLOR_NOHEAD_NOTAIL, "RS485 ");
+#endif
 #endif
         transmission_config.rs485_ready = 1;
         transmission_config.rs485_errors = 0;
@@ -868,7 +995,11 @@ unsigned short int rs485_setup() {
 
 void transmission_setup(long int now) {
 #if DEBUG_TRANSMISSION
+#if OPTIMIZE
+    Serial.println(F("INIT -> "));
+#else
     print_debug("TRs", stdout, CPURPLE, COLOR_NOTAIL, "INI -> ");
+#endif
 #endif
 
     // Setup serial ports
@@ -888,6 +1019,7 @@ void transmission_setup(long int now) {
     transmission_config.modem_linked = 0;
     transmission_config.rs485_ready = 0;
     transmission_config.rs485_errors = 0;
+    transmission_config.http_link_wait = HTTP_LINK_WAIT_FIRST;
 
     // Setup devices
 #ifdef RS485_SERIAL
@@ -899,13 +1031,21 @@ void transmission_setup(long int now) {
 #ifdef MODEM_SERIAL
     delay(2000);
     modem_setup();
+    transmission_config.http_link_wait = HTTP_LINK_WAIT;
+    if (transmission_config.modem_ready) {
+        transmission_config.ourip_nextevent = now+TRANSMISSION_OURIP_MS;
+    }
 #else
     transmission_config.modem_ready = 1;
 #endif
 
 #if DEBUG_TRANSMISSION
     // Show we are done
+#if OPTIMIZE
+    Serial.println(F("DONE"));
+#else
     print_debug("TRs", stdout, CGREEN, COLOR_NOHEAD, "DONE");
+#endif
 #endif
 }
 
@@ -927,7 +1067,7 @@ void transmission_loop(long int now) {
         transmission_config.nextevent = now+TRANSMISSION_MS;
 
         // Check if MODEM is ready
-        if (transmission_config.modem_ready && transmission_config.rs485_ready) {
+        if (transmission_config.modem_ready) {
 
 #ifdef MODEM_SERIAL
 
@@ -1165,7 +1305,7 @@ void transmission_loop(long int now) {
             }
 
             // If it is a meesage for the ROV
-            if (buf_size) {
+            if (transmission_config.rs485_ready && buf_size) {
 
                 // Message detected
 #if DEBUG_TRANSMISSION_MSG

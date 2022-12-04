@@ -12,6 +12,7 @@ struct TTransmissionConfig {
     unsigned short int modem_linked;
     unsigned short int rs485_ready;
     unsigned short int rs485_errors;
+    unsigned long int http_link_wait;
     char ipaddr[17];
 };
 typedef struct TTransmissionConfig TransmissionConfig;
