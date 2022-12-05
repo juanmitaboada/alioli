@@ -146,6 +146,10 @@ void power_loop(long int now) {
         rov.environment.voltage_external = ina219_external.getBusVoltage_V()+ ( ina219_external.getShuntVoltage_mV() / 1000);
         rov.environment.amperage_external = ina219_external.getCurrent_mA();
 
+        char s1[20]="", s2[20]="", s3[20]="", s4[20]="";
+        print_debug(POWER_LOOP, stdout, CYELLOW, COLOR_NORMAL, "MAIN: %sV/%smA - EXTERNAL: %sV/%smA", dtostrf(rov.environment.voltage_main, 8, 4, s1), dtostrf(rov.environment.amperage_main, 8, 4, s2), dtostrf(rov.environment.voltage_external, 8, 4, s3), dtostrf(rov.environment.amperage_external, 8, 4, s4));
+
+
 #if DEBUG_SENSORS_POWER
         float shuntvoltage = 0;
         float busvoltage = 0;
@@ -222,18 +226,16 @@ Power:         720.00 mW
 ...
            */
 
-        /*
 #if DEBUG_SENSORS
 #if DEBUG_SENSORS_POWER
 #if OPTIMIZE
-        Serial.print(F("POWER: INI"));
+        Serial.print(F("POWER: DATA"));
 #else
-    char s1[20]="", s2[20]="";
-    print_debug(POWER_LOOP, stdout, CYELLOW, COLOR_NORMAL, "MAIN: %sV - EXTERNAL: %sV", dtostrf(rov.environment.voltage_main, 8, 4, s1), dtostrf(rov.environment.voltage_external, 8, 4, s2));
+    char s1[20]="", s2[20]="", s3[20]="", s4[20]="";
+    print_debug(POWER_LOOP, stdout, CYELLOW, COLOR_NORMAL, "MAIN: %sV/%smA - EXTERNAL: %sV/%smA", dtostrf(rov.environment.voltage_main, 8, 4, s1), dtostrf(rov.environment.amperage_main, 8, 4, s2), dtostrf(rov.environment.voltage_external, 8, 4, s3), dtostrf(rov.environment.amperage_external, 8, 4, s4));
 #endif
 #endif
 #endif
-        */
     }
 
 }

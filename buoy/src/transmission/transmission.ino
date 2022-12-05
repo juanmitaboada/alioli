@@ -108,6 +108,11 @@ unsigned short int modem_send_our_ip(char **buf, size_t *buf_size, size_t *buf_a
         // Buoy Main Amperage
         sprintf(tstr, "\"bma\": %.1f,", buoy.environment.amperage_main);
         strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Buoy Lat
+        sprintf(tstr, "\"bla\": %.4f,", buoy.gps.latitude);
+        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
+        // Buoy Long
+        sprintf(tstr, "\"blo\": %.4f,", buoy.gps.longitude);        strcat_realloc(&json, &json_size, &json_allocated, tstr, strlen(tstr), __FILE__, __LINE__);
 
         // JSON tail
         strcat_realloc(&json, &json_size, &json_allocated, "\"x\":0}}", 7, __FILE__, __LINE__);
@@ -806,6 +811,7 @@ unsigned short int modem_gps(char **buf, size_t *buf_size, size_t *buf_allocated
     char **tokens=NULL, *token=NULL, temp[3]={0, 0, 0};
     unsigned int year=0;
     unsigned short int month=0, day=0, hour=0, minute=0, second=0;
+    size_t deviation=0;
 
     // Initialize
     (*buf_size) = 0;
@@ -827,15 +833,30 @@ unsigned short int modem_gps(char **buf, size_t *buf_size, size_t *buf_allocated
         // Set DUMMY GPS position
         (*buf_size) = 0;
         // Example: 29.4 -13.51 (29.5N 13.51W)
-        strcat_realloc(buf, buf_size, buf_allocated, "+CGPSINFO: 2940.000000,N,01351.000000,W,220822,171746.0,23.1,0.0,0.0", 68, __FILE__, __LINE__);
+        strcat_realloc(buf, buf_size, buf_allocated, "\r\n+CGPSINFO: 2940.000000,N,01351.000000,W,220822,171746.0,23.1,0.0,0.0", 68, __FILE__, __LINE__);
 #endif
 
+        // Calculate deviation
+        if ((*buf_size) && ((**buf)=='\r')) {
+            deviation++;    // Pass "\r"
+        }
+        if (((*buf_size)-deviation) && ((*((*buf)+deviation))=='\n')) {
+            deviation++;    // Pass "\n"
+        }
+        deviation += 11; // Pass "+CGPSINFO: "
+
+        // GPS Show info
+        // print_debug("TRgps", stdout, CCYAN, COLOR_NOTAIL, "GPS: ");
+        // print_asbin(*buf, *buf_size, stderr);
+        // print_ashex(*buf, *buf_size, stderr);
+
         // Convert positions to decimal degrees (N=+ S=- E=+ W=-) - [ len("+CGPSINFO: ")==11 ]
-        tokens = bstr_split((*buf)+11, (*buf_size)-11, ',', (char*) __FILE__, __LINE__);
+        tokens = bstr_split((*buf)+deviation, (*buf_size)-deviation, ',', (char*) __FILE__, __LINE__);
         if (tokens) {
             buoy.gps_newdata = 1;
             for (i=0; *(tokens+i); i++) {
                 token = *(tokens+i);
+                Serial.println(token);
                 if (i==0) {
                     // Latitude
                     if (*token) {
@@ -925,6 +946,7 @@ unsigned short int modem_gps(char **buf, size_t *buf_size, size_t *buf_allocated
             } else {
                 buoy.gps.epoch = 0;
             }
+            // print_debug("TRgps", stdout, CCYAN, 0, "GPS: lat=%.4f    long=%.4f    alt=%.2f", buoy.gps.latitude, buoy.gps.longitude, buoy.gps.altitude);
         }
     }
 
@@ -1180,8 +1202,10 @@ void transmission_loop(long int now) {
                         buf_size = 0;
                     }
 
-                // No data in the BUS, check if there is work to do
-                } else if (
+                }
+
+                // Check if there is work to do
+                if (
                            (transmission_config.gps_nextevent<now)
                         || (transmission_config.webserver_nextevent<now)
                         || (transmission_config.ourip_nextevent<now)

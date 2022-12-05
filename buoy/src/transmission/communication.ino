@@ -331,7 +331,7 @@ unsigned short int rov_msg(char *buf, unsigned int buf_size, char **answer, unsi
 #ifdef ARDUINO_ARCH_AVR
                             print_debug(CROV, stdout, CWHITE, 0, "Environment: %sV - %smA", dtostrf(rov.environment.voltage, 8, 4, s1), dtostrf(rov.environment.amperage, 8, 4, s2));
 #else
-                            print_debug(CROV, stdout, CWHITE, 0, "Environment: %.2fV - %.2fmA", rov.environment.voltage, rov.environment.amperage);
+                            print_debug(CROV, stdout, CWHITE, 0, "Environment: Main=%.1fV/%.1fmA - Engines=%.1f/%.1fmA", rov.environment.voltage_main, rov.environment.amperage_main, rov.environment.voltage_external, rov.environment.amperage_external);
 #endif
 #endif
                         } else {
