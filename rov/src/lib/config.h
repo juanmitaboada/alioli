@@ -2,7 +2,8 @@
 #define CONFIG_H
 
 // General config
-#define QUICK_START 1
+#define QUICK_START 0
+#define ENGINE_TEST 0
 #define RTC 1
 #define OPTIMIZE 1
 
@@ -67,7 +68,7 @@
 
 // POWER SENSOR
 #define POWER_INA219_MAIN_MUST_EXIST 1      // INA219 MAIN device must exists (power sensor)
-#define POWER_INA219_EXTERNAL_MUST_EXIST 1  // INA219 EXTERNAL device must exists (power sensor)
+#define POWER_INA219_EXTERNAL_MUST_EXIST 0  // INA219 EXTERNAL device must exists (power sensor)
 #define POWER_INA219_EXTERNAL_ADDR 0x41     // INA219 device address for INA219 sensor External Battery
 
 // PAD

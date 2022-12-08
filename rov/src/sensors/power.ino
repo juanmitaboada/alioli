@@ -141,14 +141,14 @@ void power_loop(long int now) {
         power_config.nextevent = now+POWER_LOOKUP_MS;
 
         // Get power information
-        rov.environment.voltage_main = ina219_main.getBusVoltage_V()+ ( ina219_main.getShuntVoltage_mV() / 1000);
-        rov.environment.amperage_main = ina219_main.getCurrent_mA();
-        rov.environment.voltage_external = ina219_external.getBusVoltage_V()+ ( ina219_external.getShuntVoltage_mV() / 1000);
-        rov.environment.amperage_external = ina219_external.getCurrent_mA();
-
-        char s1[20]="", s2[20]="", s3[20]="", s4[20]="";
-        print_debug(POWER_LOOP, stdout, CYELLOW, COLOR_NORMAL, "MAIN: %sV/%smA - EXTERNAL: %sV/%smA", dtostrf(rov.environment.voltage_main, 8, 4, s1), dtostrf(rov.environment.amperage_main, 8, 4, s2), dtostrf(rov.environment.voltage_external, 8, 4, s3), dtostrf(rov.environment.amperage_external, 8, 4, s4));
-
+        if (power_config.ina219_main_enabled) {
+            rov.environment.voltage_main = ina219_main.getBusVoltage_V()+ ( ina219_main.getShuntVoltage_mV() / 1000);
+            rov.environment.amperage_main = ina219_main.getCurrent_mA();
+        }
+        if (power_config.ina219_external_enabled) {
+            rov.environment.voltage_external = ina219_external.getBusVoltage_V()+ ( ina219_external.getShuntVoltage_mV() / 1000);
+            rov.environment.amperage_external = ina219_external.getCurrent_mA();
+        }
 
 #if DEBUG_SENSORS_POWER
         float shuntvoltage = 0;
@@ -158,32 +158,39 @@ void power_loop(long int now) {
         float power_mW = 0;
 
         // MAIN
-        shuntvoltage = ina219_main.getShuntVoltage_mV();
-        busvoltage = ina219_main.getBusVoltage_V();
-        current_mA = ina219_main.getCurrent_mA();
-        power_mW = ina219_main.getPower_mW();
-        loadvoltage = busvoltage + (shuntvoltage / 1000);
+        if (power_config.ina219_main_enabled) {
+            shuntvoltage = ina219_main.getShuntVoltage_mV();
+            busvoltage = ina219_main.getBusVoltage_V();
+            current_mA = ina219_main.getCurrent_mA();
+            power_mW = ina219_main.getPower_mW();
+            loadvoltage = busvoltage + (shuntvoltage / 1000);
 
-        Serial.print(F("M:Bus Voltage:   ")); Serial.print(busvoltage); Serial.println(F(" V"));
-        Serial.print(F("M:Shunt Voltage: ")); Serial.print(shuntvoltage); Serial.println(F(" mV"));
-        Serial.print(F("M:Load Voltage:  ")); Serial.print(loadvoltage); Serial.println(F(" V"));
-        Serial.print(F("M:Current:       ")); Serial.print(current_mA); Serial.println(F(" mA"));
-        Serial.print(F("M:Power:         ")); Serial.print(power_mW); Serial.println(F(" mW"));
-        Serial.println("");
+            Serial.print(F("M:Bus Voltage:   ")); Serial.print(busvoltage); Serial.println(F(" V"));
+            Serial.print(F("M:Shunt Voltage: ")); Serial.print(shuntvoltage); Serial.println(F(" mV"));
+            Serial.print(F("M:Load Voltage:  ")); Serial.print(loadvoltage); Serial.println(F(" V"));
+            Serial.print(F("M:Current:       ")); Serial.print(current_mA); Serial.println(F(" mA"));
+            Serial.print(F("M:Power:         ")); Serial.print(power_mW); Serial.println(F(" mW"));
+            Serial.println("");
+        }
 
         // EXTERNAL
-        shuntvoltage = ina219_external.getShuntVoltage_mV();
-        busvoltage = ina219_external.getBusVoltage_V();
-        current_mA = ina219_external.getCurrent_mA();
-        power_mW = ina219_external.getPower_mW();
-        loadvoltage = busvoltage + (shuntvoltage / 1000);
+        if (power_config.ina219_external_enabled) {
+            shuntvoltage = ina219_external.getShuntVoltage_mV();
+            busvoltage = ina219_external.getBusVoltage_V();
+            current_mA = ina219_external.getCurrent_mA();
+            power_mW = ina219_external.getPower_mW();
+            loadvoltage = busvoltage + (shuntvoltage / 1000);
 
-        Serial.print(F("E:Bus Voltage:   ")); Serial.print(busvoltage); Serial.println(F(" V"));
-        Serial.print(F("E:Shunt Voltage: ")); Serial.print(shuntvoltage); Serial.println(F(" mV"));
-        Serial.print(F("E:Load Voltage:  ")); Serial.print(loadvoltage); Serial.println(F(" V"));
-        Serial.print(F("E:Current:       ")); Serial.print(current_mA); Serial.println(F(" mA"));
-        Serial.print(F("E:Power:         ")); Serial.print(power_mW); Serial.println(F(" mW"));
-        Serial.println("");
+            Serial.print(F("E:Bus Voltage:   ")); Serial.print(busvoltage); Serial.println(F(" V"));
+            Serial.print(F("E:Shunt Voltage: ")); Serial.print(shuntvoltage); Serial.println(F(" mV"));
+            Serial.print(F("E:Load Voltage:  ")); Serial.print(loadvoltage); Serial.println(F(" V"));
+            Serial.print(F("E:Current:       ")); Serial.print(current_mA); Serial.println(F(" mA"));
+            Serial.print(F("E:Power:         ")); Serial.print(power_mW); Serial.println(F(" mW"));
+            Serial.println("");
+        }
+
+        char s1[20]="", s2[20]="", s3[20]="", s4[20]="";
+        print_debug(POWER_LOOP, stdout, CYELLOW, COLOR_NORMAL, "MAIN: %sV/%smA - EXTERNAL: %sV/%smA", dtostrf(rov.environment.voltage_main, 8, 4, s1), dtostrf(rov.environment.amperage_main, 8, 4, s2), dtostrf(rov.environment.voltage_external, 8, 4, s3), dtostrf(rov.environment.amperage_external, 8, 4, s4));
 
 #endif
 

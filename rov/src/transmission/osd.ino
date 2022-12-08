@@ -15,6 +15,11 @@ const char *OSD="OSD";
 
 // === SETUP === ===============================================================================
 void osd_setup(long int now) {
+#if MODULE_OSD
+    mavlink_message_t mavlink_msg;
+    char answer[MAVLINK_MAX_PAYLOAD_LEN]={0};
+    unsigned int answer_size=0;
+#endif
 
 #if DEBUG_SENSORS
 #if OPTIMIZE
@@ -26,6 +31,22 @@ void osd_setup(long int now) {
 
     // Set local config
     osd_config.nextevent=0;
+
+#if MODULE_OSD
+    // === HEARTBEAT ===
+    mavlink_msg_heartbeat_pack(
+        mavlink_system.sysid,
+        mavlink_system.compid,
+        &mavlink_msg,
+        MAV_TYPE_SUBMARINE,         // Type = Submarine
+        MAV_AUTOPILOT_INVALID,      // Autopilot = Invalid (not a flight controller)
+        MAV_MODE_GUIDED_ARMED,      // Base mode = Armed
+        0,                          // Custom mode = None
+        MAV_STATE_ACTIVE            // System status = Active
+    );
+    answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
+    serial_send(OSD_SERIAL, answer, answer_size);
+#endif
 
 #if DEBUG_SENSORS
 #if OPTIMIZE
@@ -40,7 +61,8 @@ int8_t battery_percent() {
     int8_t i=0;
     float voltages[] = BATTERY_VOLTAGES;
     for (i=10; i>0; i--) {
-        if (rov.environment.voltage_external>=voltages[i]) {
+        // if (rov.environment.voltage_external>=voltages[i]) { }
+        if (rov.environment.voltage_main>=voltages[i]) {
             break;
         }
     }
@@ -54,16 +76,20 @@ void osd_loop(long int now) {
     mavlink_message_t mavlink_msg;
     char answer[MAVLINK_MAX_PAYLOAD_LEN]={0};
     unsigned int answer_size=0;
+    uint8_t batpercent=0;
 
     // Check OSD lookup
     if (osd_config.nextevent<now) {
+        batpercent = battery_percent();           // Battery remaining (%)
 
 #if DEBUG_OSD
+        /*
 #if OPTIMIZE
         Serial.println(F("OSD: INI"));
 #else
         print_debug(OSD, stdout, CPURPLE, COLOR_NORMAL, "OSD");
 #endif
+    */
 #endif
 
         // Set next event
@@ -92,9 +118,11 @@ void osd_loop(long int now) {
             0,              // Sensors enabled
             0,              // Sensors health
             999,            // Load %
-            (uint16_t) (rov.environment.voltage_external*1000),  // Battery voltage (mV)
-            (uint16_t) rov.environment.amperage_external,        // Battery current (cA)
-            battery_percent(),                          // Battery remaining (%)
+            // (uint16_t) (rov.environment.voltage_external*1000),  // Battery voltage (mV)
+            (uint16_t) (rov.environment.voltage_main*1000),  // Battery voltage (mV)
+            // (uint16_t) rov.environment.amperage_external,        // Battery current (cA)
+            (uint16_t) rov.environment.amperage_main,        // Battery current (cA)
+            batpercent,                          // Battery remaining (%)
             0,              // Communication drop rate (UART, I2C, SPI, CAN)
             0,              // Communication errors (UART, I2C, SPI, CAN)
             0,              // Errors count 1
@@ -193,14 +221,16 @@ void osd_loop(long int now) {
             millis(),                           // Time since system boot (millis)
             rov.environment.pressure,           // Absolute Pressure (hPa)
             0,                                  // Differential Pressure (hPa)
-            rov.environment.temp_engines_battery*100    // Absolute pressure temperature (cdegC)
+            rov.environment.temp_main_battery*100    // Absolute pressure temperature (cdegC)
+            // rov.environment.temp_engines_battery*100    // Absolute pressure temperature (cdegC)
             );
         answer_size = (unsigned int) mavlink_msg_to_send_buffer((uint8_t*) answer, &mavlink_msg);
         serial_send(OSD_SERIAL, answer, answer_size);
 
 
  #if DEBUG_OSD
-        print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d - (r:%d, p:%d, y:%d, h:%d)", (int) battery_percent(), rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw, rov.environment.acelerometer.compass);
+        // print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d - (r:%d, p:%d, y:%d, h:%d)", (int) batpercent, rov.environment.acelerometer.roll, rov.environment.acelerometer.pitch, rov.environment.acelerometer.yaw, rov.environment.acelerometer.compass);
+        print_debug(OSD, stdout, CYELLOW, COLOR_NORMAL, "Batt:%d", (int) batpercent);
 #endif
     }
 #endif

@@ -59,6 +59,11 @@ void engine_set(EngineConfig *engine, unsigned short int dir, unsigned short int
         digitalWrite (engine->pin_enable, HIGH);
         engine->enable = 1;
     }
+
+#if DEBUG_ENGINES
+    print_debug(ES, stdout, "blue", COLOR_NORMAL, "    %s - Move engine (Dir: %d:%d - Enable: %d:%d)", engine->name, engine->pin_dir, engine->dir, engine->pin_enable, engine->enable);
+#endif
+
 }
 
 void engine_setup(const char* name, unsigned short int idx, unsigned short int cw, unsigned short int pin_dir, unsigned short int pin_enable) {
@@ -66,7 +71,7 @@ void engine_setup(const char* name, unsigned short int idx, unsigned short int c
 
     // Set pinmode
 #if DEBUG_ENGINES
-    print_debug(ES, stdout, "blue", COLOR_NORMAL, "    %s - Seting up engine (Dir:%d:%d - Enable:%d:%d)", name, pin_dir, dir, pin_enable, enable);
+    print_debug(ES, stdout, "blue", COLOR_NORMAL, "    %s - Seting up engine (Dir:%d - Enable:%d)", name, pin_dir, pin_enable);
 #endif
 
     // Set up configuration
@@ -80,8 +85,17 @@ void engine_setup(const char* name, unsigned short int idx, unsigned short int c
     pinMode (engine->pin_enable, OUTPUT);
     pinMode (engine->pin_dir, OUTPUT);
 
-    // Decide whether to use test or not (Quick Start)
-    if (!QUICK_START) {
+#if DEBUG_ENGINES
+    print_debug(ES, stdout, CGREEN, COLOR_NORMAL, "    %s - Ready", engine->name);
+#endif
+
+}
+
+
+void engine_test(unsigned short int idx) {
+
+        EngineConfig *engine = &(engines_config.engines[idx]);
+
         // Motor gira en un sentido
 #if DEBUG_ENGINES
         print_debug(ES, stdout, CCYAN, COLOR_NORMAL, "    %s - Turn side 1", engine->name);
@@ -104,20 +118,12 @@ void engine_setup(const char* name, unsigned short int idx, unsigned short int c
 
         // Motor no gira
         engine_set(engine, ENGINE_NOCOLOR, ENGINE_GEAR_STOP);
-    }
-
-#if DEBUG_ENGINES
-    print_debug(ES, stdout, CGREEN, COLOR_NORMAL, "    %s - Ready", engine->name);
-#endif
-
 }
 
 void engine_move(const char* name, unsigned short int target) {
-    // EngineConfig *engine=NULL;
 
-    // Get engine
 #if DEBUG_ENGINES
-    print_debug(ES, stdout, "blue", COLOR_NORMAL, "    %s - Move engine (Dir: %d:%d - Enable: %d:%d)", name, pin_dir, dir, pin_enable, enable);
+    print_debug(ES, stdout, CGREEN, COLOR_NORMAL, "    ENGINE MOVE - Start");
 #endif
 
     // Set up configuration
@@ -245,7 +251,7 @@ void engine_move(const char* name, unsigned short int target) {
 
 
 #if DEBUG_ENGINES
-    print_debug(ES, stdout, CGREEN, COLOR_NORMAL, "    %s - Ready", engine->name);
+    print_debug(ES, stdout, CGREEN, COLOR_NORMAL, "    ENGINE MOVE - Done");
 #endif
 }
 
@@ -255,12 +261,42 @@ void engines_setup(long int now) {
 #if DEBUG_ENGINES
     print_debug(ES, stdout, CPURPLE, COLOR_NORMAL, "INI");
 #endif
-    engine_setup("Front left 1", ENGINE_FRONT_LEFT, ENGINE_FRONT_LEFT_CW, ENGINE_FRONT_LEFT_DIR, ENGINE_FRONT_LEFT_ENABLE);
-    engine_setup("Lateral left 2", ENGINE_LATERAL_LEFT, ENGINE_LATERAL_LEFT_CW, ENGINE_LATERAL_LEFT_DIR, ENGINE_LATERAL_LEFT_ENABLE);
-    engine_setup("Back left 3", ENGINE_BACK_LEFT, ENGINE_BACK_LEFT_CW, ENGINE_BACK_LEFT_DIR, ENGINE_BACK_LEFT_ENABLE);
-    engine_setup("Back right 4", ENGINE_BACK_RIGHT, ENGINE_BACK_RIGHT_CW, ENGINE_BACK_RIGHT_DIR, ENGINE_BACK_RIGHT_ENABLE);
-    engine_setup("Lateral right 5", ENGINE_LATERAL_RIGHT, ENGINE_LATERAL_RIGHT_CW, ENGINE_LATERAL_RIGHT_DIR, ENGINE_LATERAL_RIGHT_ENABLE);
-    engine_setup("Front right 6", ENGINE_FRONT_RIGHT, ENGINE_FRONT_RIGHT_CW, ENGINE_FRONT_RIGHT_DIR, ENGINE_FRONT_RIGHT_ENABLE);
+
+        engine_setup("Front left 1", ENGINE_FRONT_LEFT, ENGINE_FRONT_LEFT_CW, ENGINE_FRONT_LEFT_DIR, ENGINE_FRONT_LEFT_ENABLE);
+        engine_setup("Lateral left 2", ENGINE_LATERAL_LEFT, ENGINE_LATERAL_LEFT_CW, ENGINE_LATERAL_LEFT_DIR, ENGINE_LATERAL_LEFT_ENABLE);
+        engine_setup("Back left 3", ENGINE_BACK_LEFT, ENGINE_BACK_LEFT_CW, ENGINE_BACK_LEFT_DIR, ENGINE_BACK_LEFT_ENABLE);
+        engine_setup("Back right 4", ENGINE_BACK_RIGHT, ENGINE_BACK_RIGHT_CW, ENGINE_BACK_RIGHT_DIR, ENGINE_BACK_RIGHT_ENABLE);
+        engine_setup("Lateral right 5", ENGINE_LATERAL_RIGHT, ENGINE_LATERAL_RIGHT_CW, ENGINE_LATERAL_RIGHT_DIR, ENGINE_LATERAL_RIGHT_ENABLE);
+        engine_setup("Front right 6", ENGINE_FRONT_RIGHT, ENGINE_FRONT_RIGHT_CW, ENGINE_FRONT_RIGHT_DIR, ENGINE_FRONT_RIGHT_ENABLE);
+
+#if ENGINE_TEST
+    // Full test
+    while (1) {
+#else
+    // Decide whether to use test or not (Quick Start)
+    if (!QUICK_START) {
+#endif
+#if OPTIMIZE
+        Serial.println(F("ENGINES Test started"));
+#else
+        print_debug("ENGINE-SETUP", stderr, CYELLOW, 0, "Testing engines!");
+#endif
+        engine_test(ENGINE_FRONT_LEFT);
+        engine_test(ENGINE_LATERAL_LEFT);
+        engine_test(ENGINE_BACK_LEFT);
+        engine_test(ENGINE_BACK_RIGHT);
+        engine_test(ENGINE_LATERAL_RIGHT);
+        engine_test(ENGINE_FRONT_RIGHT);
+#if OPTIMIZE
+        Serial.println(F("ENGINES Test finished"));
+#else
+        print_debug("ENGINE-SETUP", stderr, CYELLOW, 0, "Test finished");
+#endif
+#if ENGINE_TEST
+    }
+#else
+    }
+#endif
 
 #if DEBUG_ENGINES
     print_debug(ES, stdout, CPURPLE, COLOR_NORMAL, "DONE");
