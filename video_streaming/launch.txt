@@ -1,7 +1,0 @@
-# == NEW ==
-rtspServer=127.0.0.1:rtsp://127.0.0.1:8554/alioli ./rtsp-simple-server
-ffmpeg -f v4l2 -framerate 90 -re -stream_loop -1 -video_size 640x320 -input_format mjpeg -i /dev/video2 -c copy -f rtsp rtsp://localhost:8554/alioli
-
-# == OLD ==
-# rtspServer=127.0.0.1:rtsp://127.0.0.1:8554/webCamStream ./rtsp-simple-server
-# sudo ffmpeg -f v4l2 -framerate 24 -video_size 480x480 -i /dev/video0 -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/webCamStream
