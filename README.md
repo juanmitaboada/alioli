@@ -7,17 +7,17 @@ https://www.juanmitaboada.com/alioli-rov-submarine-drone-software-framework-for-
 
 ## Description:
 
-- The entire **Alioli ROV** code is developed in **C programming language** using [platformio](https://platformio.org/) (check [the link provided before to my website to get into more details](https://www.juanmitaboada.com/alioli-rov-submarine-drone-software-framework-for-arduino/))
+- The entire **Alioli ROV** code is developed in **C programming language** using [PlatformIO](https://platformio.org/) (check [the link provided before to my website to get into more details](https://www.juanmitaboada.com/alioli-rov-submarine-drone-software-framework-for-arduino/))
 - The only folders that Alioli ROV uses to do its jobs are:
   - **buoy:** software used for buoy communication with QGroundControl (Mavlink) and connection to the network.
   - **common:** common functions for buoy and rov
   - **rov:** software used for the rov to manage commands from buoy and internal control and telemetry
-- **testio:** this is a test folder with a simple example to test whether you have [platformio](https://platformio.org/) software under control or not. I don't recommend working with the rest of the software until you have control of [platformio](https://platformio.org/) since this is the first issue you may have.
+- **testio:** this is a test folder with a simple example to test whether you have [PlatformIO](https://platformio.org/) software under control or not. I don't recommend working with the rest of the software until you have control of [PlatformIO](https://platformio.org/) since this is the first issue you may have.
 - **NOTE:** *requirements.txt* is part of the deprecated dome software
 
 ## Quick steps
 
-I have done this project using [platformio](https://platformio.org/). Here you have some steps to bring up the project quickly:
+I have done this project using [PlatformIO](https://platformio.org/). Here you have some steps to bring up the project quickly:
 
 **Initialize the project:**
 
