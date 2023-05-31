@@ -1,1 +1,0 @@
-pio project init --board megaatmega2560 --board esp32dev --board pico
